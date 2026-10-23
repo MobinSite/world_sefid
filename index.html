@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<title>شبیه‌ساز زندگی</title>
+<style>
+:root{color-scheme:dark;--gold:#f1c84b;--panel:#14251deF;--edge:#ffffff45}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bcdf0;color:#fff;font-family:Tahoma,Arial,sans-serif}body{overscroll-behavior:none}canvas{display:block;touch-action:none}
+#hud{position:fixed;top:9px;left:9px;right:9px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;pointer-events:none;z-index:2}.panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:8px 11px;line-height:1.9;font-size:12px;backdrop-filter:blur(6px);box-shadow:0 5px 20px #0002}.panel button{pointer-events:auto}.buttons{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+#help{position:fixed;bottom:9px;left:9px;max-width:330px;z-index:2;pointer-events:none}#interact,#message{position:fixed;left:50%;transform:translateX(-50%);text-align:center;background:#101c20ee;border:1px solid #ffffff55;border-radius:12px;padding:10px 15px;line-height:1.9;z-index:3;max-width:min(92vw,520px);pointer-events:none}#interact{bottom:18px;display:none;min-width:260px}#message{top:25%;display:none;white-space:pre-line}
+.key{display:inline-block;background:var(--gold);color:#172018;padding:0 6px;border-radius:5px;font-weight:bold;margin:0 1px}button{background:var(--gold);color:#192315;border:0;border-radius:8px;padding:7px 9px;font-weight:bold;cursor:pointer;font-family:inherit}button:disabled{opacity:.55;cursor:not-allowed}button:focus-visible{outline:2px solid white;outline-offset:2px}#start{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;background:linear-gradient(#152d31dd,#0c1c19f5)}.card{max-width:510px;width:100%;max-height:92vh;overflow:auto;background:#203d2dee;border:1px solid #ffffff44;border-radius:18px;padding:23px;line-height:1.9;box-shadow:0 15px 55px #0005}.small{font-size:12px;opacity:.88}#loadtext{min-height:1.5em;color:#ffdf82}#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;z-index:2;pointer-events:none;display:none;text-shadow:0 1px 4px #000}
+#dealerPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;pointer-events:auto;width:min(920px,94vw);max-height:86vh;overflow:auto;text-align:center;background:rgba(12,25,20,.96);border:1px solid #f1c84b99;border-radius:18px;padding:14px;box-shadow:0 18px 65px #000a;backdrop-filter:blur(10px)}
+.dealer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.dealer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.car-card{background:#24382f;border:1px solid #ffffff30;border-radius:13px;padding:9px;min-width:0}.car-photo{width:100%;height:145px;object-fit:cover;border-radius:9px;background:linear-gradient(145deg,#44695b,#d4d9d3);display:block}.car-name{font-size:16px;font-weight:bold;margin:8px 0 3px}.car-price{font-size:13px;color:#ffe58a;margin-bottom:7px}.car-card button{width:100%;min-height:38px}.dealer-note{font-size:11px;opacity:.8;margin-top:10px;line-height:1.8}
+@media(max-width:700px){#dealerPanel{padding:9px;max-height:82vh}.dealer-grid{grid-template-columns:1fr}.car-card{display:grid;grid-template-columns:110px 1fr;gap:4px 9px;text-align:right;align-items:center}.car-photo{grid-row:span 3;height:105px}.car-name{margin:0}.car-price{margin:0}.car-card button{grid-column:2}.dealer-head h3{font-size:15px;margin:4px 0}.dealer-note{font-size:10px}}
+@media(max-width:700px){#hud{top:4px;left:4px;right:4px;gap:4px}.panel{font-size:10px;padding:5px 7px}#help{max-width:220px;bottom:4px;left:4px}.card{padding:15px}#interact{bottom:100px}.buttons button{padding:6px;font-size:10px}}
+
+/* کنترل‌های لمسی فقط روی گوشی/تبلت موبایل فعال می‌شوند؛ در رایانه هیچ‌وقت دیده نمی‌شوند. */
+#mobileControls{display:none;position:fixed;left:0;right:0;bottom:max(6px,env(safe-area-inset-bottom));z-index:6;align-items:flex-end;justify-content:space-between;padding:8px;gap:8px;pointer-events:none;direction:ltr;user-select:none;-webkit-user-select:none}
+#mobileControls .mobile-pad{display:grid;grid-template-columns:repeat(3,43px);grid-template-rows:repeat(3,43px);gap:4px;pointer-events:auto;touch-action:none}
+#mobileControls .mobile-actions{display:grid;grid-template-columns:repeat(2,minmax(48px,1fr));gap:5px;max-width:44vw;pointer-events:auto;touch-action:none}
+#mobileControls button{min-width:0;min-height:43px;padding:4px;background:rgba(20,37,29,.9);color:#fff;border:1px solid #ffffff75;border-radius:12px;font-size:12px;font-weight:bold;line-height:1.1;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 7px #0005}
+#mobileControls .mobile-pad button{font-size:22px;background:rgba(20,37,29,.82)}
+#mobileControls button.active,#mobileControls button:active{background:#f1c84b;color:#172018;transform:scale(.96)}
+#mobileControls .pad-up{grid-column:2;grid-row:1}#mobileControls .pad-left{grid-column:1;grid-row:2}#mobileControls .pad-right{grid-column:3;grid-row:2}#mobileControls .pad-down{grid-column:2;grid-row:3}
+html.mobile-device #help{display:none}
+html.mobile-device #interact{bottom:164px;max-width:90vw;font-size:12px}
+html.mobile-device #hud{right:4px;left:4px;top:4px;gap:4px}
+html.mobile-device .panel{font-size:10px;padding:5px 7px;backdrop-filter:blur(3px)}
+html.mobile-device #hud .buttons button{font-size:9px;padding:5px}
+@media(max-width:380px){#mobileControls .mobile-pad{grid-template-columns:repeat(3,37px);grid-template-rows:repeat(3,37px)}#mobileControls button{min-height:39px;font-size:10px}#mobileControls .mobile-pad button{font-size:19px}#mobileControls .mobile-actions{gap:4px;max-width:45vw}html.mobile-device #interact{bottom:151px}}
+@media(max-height:520px){#mobileControls{padding:4px}#mobileControls .mobile-pad{grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,36px);gap:3px}#mobileControls button{min-height:35px;padding:2px;font-size:10px}#mobileControls .mobile-pad button{font-size:18px}#mobileControls .mobile-actions{gap:3px}html.mobile-device #interact{bottom:130px}}
+
+
+#dialogPanel{display:none;position:fixed;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);width:min(430px,92vw);background:#10221bee;border:2px solid #f1c84b;border-radius:16px;padding:18px;box-shadow:0 16px 55px #000b;line-height:1.9;text-align:center}
+#dialogPanel h3{margin:0 0 8px;color:#ffe28a}#dialogText{margin:8px 0 16px}#dialogPanel button{min-width:100px}
+#outfitChoice{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+#outfitChoice label{font-size:13px}#shirtColorSelect{background:#263a30;color:white;border:1px solid #ffffff66;border-radius:8px;padding:7px;font-family:inherit}
+
+.net-controls{margin:14px 0;padding:12px;background:#12291fbb;border:1px solid #ffffff38;border-radius:12px;text-align:right}
+.net-controls h3{margin:0 0 8px;color:#ffe28a;font-size:15px}
+.net-controls input{width:100%;min-width:0;background:#101c18;color:#fff;border:1px solid #ffffff55;border-radius:8px;padding:9px;font-family:inherit;font-size:13px;margin:4px 0;direction:ltr;text-align:left}
+.net-row{display:flex;gap:6px;align-items:center;margin-top:5px}.net-row button{flex:1;min-width:0;font-size:12px;padding:9px 6px}
+#networkStartStatus{font-size:12px;line-height:1.7;color:#ffe28a;white-space:pre-line;margin:7px 0 0;overflow-wrap:anywhere}
+#onlineHud{display:none;position:fixed;z-index:9;top:92px;left:50%;transform:translateX(-50%);width:min(94vw,620px);padding:8px 10px;background:#10251eeF;border:1px solid #f1c84b99;border-radius:12px;box-shadow:0 6px 24px #0005;font-size:12px;pointer-events:auto}
+#onlineHud .online-row{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+#onlineHud button{font-size:11px;padding:6px 8px}#onlineStatus{color:#ffe28a}
+@media(max-width:700px){#onlineHud{top:84px;width:96vw;padding:6px;font-size:10px}#onlineHud button{font-size:9px;padding:5px 6px}.net-row{gap:4px}.net-row button{font-size:10px}}
+
+</style>
+</head>
+<body>
+<div id="hud">
+ <div class="panel"><b>🌾 شبیه‌ساز زندگی</b><br>💰 پول: <b id="money">۰</b> تومان<br>🌾 گندم: <b id="wheat">۰</b> دانه<br>🚜 سرعت: <b id="speed">۰</b> کیلومتر/ساعت<br>📍 مسیر: <span id="distance">مزرعه سوهان</span></div>
+ <div class="panel">وضعیت: <span id="status">پیاده</span><br>صندلی: <span id="seat">بیرون تراکتور</span><br>دوربین: <span id="camstatus">سوم‌شخص</span><br>ملک: <span id="property">هنوز ملکی نخریدی</span><div class="buttons"><button id="buyLand">خرید زمین — ۳۰۰٬۰۰۰</button><button id="buyHouse">خرید خانه خالی — ۳۰۰٬۰۰۰</button><button id="quickOnlineBtn" type="button">🌐 اتصال به دنیای آنلاین</button></div></div>
+</div>
+<div id="help" class="panel"><b>🎮 راهنما</b><br>پیاده: <span class="key">W</span> حرکت، <span class="key">A/D</span> چرخش مثل GTA؛ خودرو: <span class="key">W/S</span> گاز/دنده‌عقب، <span class="key">A/D</span> فرمان<br>برداشت دقیقاً ۱ دانه: <span class="key">E</span> (نزدیک گندم)<br>سوارشدن: <span class="key">R</span>؛ صندلی شاگرد تراکتور: <span class="key">P</span>؛ پیاده‌شدن: <span class="key">Q</span><br>دوربین تراکتور: ماوس؛ <span class="key">C</span> داخل/بیرون<br>اول‌شخص پیاده: <span class="key">V</span>؛ فروش عادی با <span class="key">F</span> (سُه ۵٬۰۰۰؛ قزوین ۱۰٬۰۰۰؛ طالقان ۱۵٬۰۰۰ تومان)؛ فروش ویژه با <span class="key">G</span> (قیمت فروشندهٔ هر منطقه)<br>نزدیک فروشندهٔ هر منطقه: <span class="key">G</span> فروش ویژه؛ گفتگو با NPC: <span class="key">T</span><br><span class="small">نکته: برای چرخاندن دوربین، داخل صفحه بازی کلیک کن؛ پول شروع ۰ تومان است. کیلومترهای سفر طبق مقیاس داخلی همین مسیر بازی محاسبه می‌شوند.</span></div>
+<div id="mobileControls" aria-label="کنترل‌های لمسی بازی">
+ <div class="mobile-pad" aria-label="حرکت و فرمان">
+  <button type="button" class="pad-up" data-hold="w" aria-label="جلو / گاز">▲</button>
+  <button type="button" class="pad-left" data-hold="a" aria-label="چپ">◀</button>
+  <button type="button" class="pad-right" data-hold="d" aria-label="راست">▶</button>
+  <button type="button" class="pad-down" data-hold="s" aria-label="عقب / ترمز">▼</button>
+ </div>
+ <div class="mobile-actions" aria-label="دکمه‌های تعامل">
+  <button type="button" data-action="e">🌾 برداشت E</button>
+  <button type="button" data-action="r">🚗 سوار R</button>
+  <button type="button" data-action="p">صندلی P</button>
+  <button type="button" data-action="q">پیاده Q</button>
+  <button type="button" data-action="c">📷 دوربین C</button>
+  <button type="button" data-action="v">👁 اول‌شخص V</button>
+  <button type="button" data-action="f">فروش F</button>
+  <button type="button" data-action="g">فروش G</button><button type="button" data-action="t">گفتگو T</button>
+ </div>
+</div>
+<div id="dealerPanel" role="dialog" aria-label="نمایشگاه ماشین روستا" aria-modal="false">
+ <div class="dealer-head"><div><h3 style="margin:0">🚘 نمایشگاه ماشین روستا</h3><div id="dealerStatus" class="small">برای خرید ماشین پول جمع کن.</div></div><button id="closeDealer" type="button" aria-label="بستن نمایشگاه">✕ بستن</button></div>
+ <div class="dealer-grid">
+  <div class="car-card"><img class="car-photo" src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Peugeot_Pars_01_2024-05-07.jpg" alt="عکس واقعی پژو پارس" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22300%22 viewBox=%220 0 600 300%22%3E%3Crect width=%22600%22 height=%22300%22 fill=%22%23384e45%22/%3E%3Ctext x=%22300%22 y=%22155%22 font-size=%2248%22 text-anchor=%22middle%22 fill=%22white%22%3EPEUGEOT PARS%3C/text%3E%3C/svg%3E'"><div class="car-name">🚘 پژو پارس</div><div class="car-price">۲۰٬۰۰۰٬۰۰۰ تومان</div><button id="buyPeugeot" type="button">خرید پژو</button></div>
+  <div class="car-card"><img class="car-photo" src="https://upload.wikimedia.org/wikipedia/commons/0/02/Saipa_Pride_131_SE_2013_1392_Tehran_front.jpg" alt="عکس واقعی پراید سایپا" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22300%22 viewBox=%220 0 600 300%22%3E%3Crect width=%22600%22 height=%22300%22 fill=%22%23454b55%22/%3E%3Ctext x=%22300%22 y=%22155%22 font-size=%2248%22 text-anchor=%22middle%22 fill=%22white%22%3ESAIPA PRIDE%3C/text%3E%3C/svg%3E'"><div class="car-name">🚘 پراید</div><div class="car-price">۴۰٬۰۰۰٬۰۰۰ تومان</div><button id="buyPride" type="button">خرید پراید</button></div>
+  <div class="car-card"><img class="car-photo" src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Saipa_Shahin_01_2023-07-03.jpg" alt="عکس واقعی سایپا شاهین" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22300%22 viewBox=%220 0 600 300%22%3E%3Crect width=%22600%22 height=%22300%22 fill=%22%231a4c82%22/%3E%3Ctext x=%22300%22 y=%22155%22 font-size=%2248%22 text-anchor=%22middle%22 fill=%22white%22%3ESAIPA SHAHIN%3C/text%3E%3C/svg%3E'"><div class="car-name">🚘 سایپا شاهین</div><div class="car-price">۱۲۰٬۰۰۰٬۰۰۰ تومان</div><button id="buyShahin" type="button">خرید شاهین</button></div>
+ </div>
+ <div class="dealer-note">برای خرید باید پول کافی داشته باشی. بعد از خرید، کنار ماشین خودت برو و R بزن تا سوار شوی. هر خودرو مدل سه‌بعدی و جزئیات مخصوص خودش را دارد.</div>
+</div><div id="dialogPanel" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><h3 id="dialogTitle">گفتگو</h3><div id="dialogText"></div><button id="dialogClose" type="button">باشه</button></div><div id="interact"></div><div id="message" role="status" aria-live="polite"></div><div id="crosshair">+</div>
+<div id="onlineHud" aria-live="polite"><div class="online-row"><b>🌐 دنیای مشترک</b><span id="onlineStatus">در حال آماده‌سازی…</span></div><div class="online-row" style="margin-top:5px"><span>جهان:</span><b id="roomIdLabel" dir="ltr">عمومی · بدون کد</b><button id="copyRoomCode" type="button" style="display:none">کپی کد</button><button id="copyInviteLink" type="button" style="display:none">کپی لینک دعوت</button><button id="disconnectOnline" type="button">قطع آنلاین</button></div></div>
+<div id="start"><div class="card"><div style="font-size:38px">🚜🌾🏡</div><h2>شبیه‌ساز زندگی</h2><p>زندگی روستایی سه‌بعدی: مزرعه و تراکتور، روستای سُه، جادهٔ طولانی دوراهی قزوین/طالقان، فروش محصولات، NPCهای گفتگوکننده، نمایشگاه‌های خودرو و موتورسواری.</p><p class="small">رایانه: با WASD بازی کن. گوشی: کنترل‌های لمسی نمایش داده می‌شوند. دوربین را با ماوس یا کشیدن انگشت بچرخان.</p>
+<div id="outfitChoice"><label for="shirtColorSelect">👕 رنگ لباس:</label><select id="shirtColorSelect"><option value="#276487">آبی</option><option value="#287d49">سبز</option><option value="#a93e32">قرمز</option><option value="#343740">ذغالی</option><option value="#c39a36">طلایی</option></select></div>
+<p class="small">با ورود به بازی، خودکار تلاش می‌کنیم وارد دنیای مشترک شویم؛ کد اتاق لازم نیست. بازیکن‌ها نزدیک محل شروع ظاهر می‌شوند.</p><p class="small">برای محیط سه‌بعدی و تصویر مرجع تراکتور اتصال اینترنت لازم است. فایل را با Live Server یا نسخهٔ سایت اجرا کن.</p><p class="small">اعتبار تصویر تراکتور: High Contrast، Wikimedia Commons، مجوز CC BY 3.0 DE — <a href="https://commons.wikimedia.org/wiki/File:Side_view_of_a_vintage_tractor.JPG" target="_blank" rel="noopener noreferrer" style="color:#ffe28a">دیدن منبع عکس</a></p>
+<div class="net-controls"><h3>🌐 دنیای مشترک آنلاین</h3><label for="playerNameInput" class="small">اسم نمایشی (اختیاری):</label><input id="playerNameInput" maxlength="20" placeholder="مثلاً شخم‌زن_۲" autocomplete="nickname"><p id="networkStartStatus">برای ورود خودکار به دنیای عمومی، روی «ورود به بازی» بزن.</p></div>
+<button id="play" type="button">ورود به بازی</button><p id="loadtext" class="small"></p></div></div>
+<script type="module">
+const $=id=>document.getElementById(id);
+// تشخیص گوشی از روی User-Agent؛ کلاس باعث می‌شود رایانه فقط کنترل صفحه‌کلید را ببیند.
+const isMobileDevice=/(Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini)/i.test(navigator.userAgent)||((navigator.platform==='MacIntel')&&navigator.maxTouchPoints>1);
+document.documentElement.classList.toggle('mobile-device',isMobileDevice);
+// برای اینترنت‌هایی که یک CDN را مسدود می‌کنند، چند منبع جایگزین داریم.
+const THREE_URLS=[
+ 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+ 'https://unpkg.com/three@0.160.0/build/three.module.js',
+ 'https://esm.sh/three@0.160.0',
+ 'https://cdn.skypack.dev/three@0.160.0'
+];
+async function importWithTimeout(url,timeoutMs=8000){let timer;try{return await Promise.race([import(url),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('مهلت بارگیری این منبع تمام شد.')),timeoutMs);})]);}finally{clearTimeout(timer);}}
+async function loadThree(){
+ const errors=[];
+ for(let i=0;i<THREE_URLS.length;i++){
+  const url=THREE_URLS[i];
+  $('loadtext').textContent=`در حال تلاش برای اتصال به موتور سه‌بعدی (${i+1} از ${THREE_URLS.length})...`;
+  try{return await importWithTimeout(url,8000);}
+  catch(err){errors.push(`${url}: ${err?.message||String(err)}`);console.warn('Three.js CDN failed:',url,err);}
+ }
+ throw new Error('بارگیری از همهٔ منابع Three.js ناموفق بود.\n'+errors.join('\n'));
+}
+async function loadGLTFSupport(){
+ const providers=[
+  {loader:'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js',skeleton:'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js'},
+  {loader:'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js',skeleton:'https://esm.sh/three@0.160.0/examples/jsm/utils/SkeletonUtils.js'}
+ ];
+ const failures=[];
+ for(const provider of providers){
+  try{
+   const mod=await importWithTimeout(provider.loader,7000);
+   if(!mod.GLTFLoader)throw new Error('GLTFLoader در این منبع پیدا نشد');
+   GLTFLoaderClass=mod.GLTFLoader;
+   try{const sk=await importWithTimeout(provider.skeleton,5000);skeletonClone=sk.clone||null;}catch(e){console.warn('SkeletonUtils unavailable; basic clone will be used.',e);}
+   return true;
+  }catch(e){failures.push(`${provider.loader}: ${e?.message||e}`);console.warn('GLTFLoader CDN failed:',provider.loader,e);}
+ }
+ console.warn('Detailed 3D assets disabled; procedural fallback will remain. '+failures.join(' | '));
+ return false;
+}
+let THREE,scene,camera,renderer,tractor,person,steeringWheel,landPlot,houseProperty,hamed,hamedBody,activeCar=null,motorbike=null,activeBike=null;
+let GLTFLoaderClass=null,skeletonClone=null,realisticAssetsStatus='not-started';
+let started=false,mode='foot',speed=0,steer=0,money=0,wheat=0,ownsLand=false,ownsHouse=false,cockpit=false,firstPerson=false,shiftLock=false,last=0,saveTimer=0,toastTimer=0,ownedCars=[],dealerClosed=false,dealerRegionShown=null,soohDealerGridHTML='',soohDealerNote='',soohDealerTitle='';
+let startingGame=false,peerInstance=null,peerConnection=null,trysteroRoom=null,trysteroPacketAction=null,trysteroTransports=[],multiplayerRole='offline',myPeerId='',localPlayerName='بازیکن',remoteVehicleTemplates={tractor:null,bike:null,cars:{}},networkSendTimer=0;
+const GLOBAL_WORLD_ID='soohan-life-world-global-v1';
+const GLOBAL_APP_ID='com.mobinsite.javad-hoii.sohan-life-3d';
+const CLIENT_SESSION_ID=(()=>{try{return (crypto.randomUUID?crypto.randomUUID():('p-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)));}catch(e){return 'p-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);}})();
+const peerConnections=new Map(),remotePlayers=new Map(),latestPlayerStates=new Map();
+let globalJoinInProgress=false,joinedSharedWorld=false,pendingGlobalSpawn=false,reconnectTimer=0,manualDisconnect=false;
+let yaw=0,pitch=.12,vehicleLookYaw=0,vehicleLookPitch=.08;
+const keys=Object.create(null),fields=[],wheels=[],materials={},regrowQueue=[],cars=[],npcs=[],specialSellers=[],dealerSpots={},solidColliders=[];
+const VALID_CAR_IDS=['peugeot','pride','shahin','q_tara','q_maserati','q_i8','t_alfa','t_206'];
+const CITY={sooh:{x:0,z:-445},qazvin:{x:400,z:-2367},taleghan:{x:-600,z:-3245}};
+const SAVE_KEY='shabihe-saz-zendegi-save-v6';
+let shirtColor='#276487';try{shirtColor=localStorage.getItem('shabihe-saz-outfit-color')||'#276487';}catch(err){}
+$('shirtColorSelect').value=shirtColor;$('shirtColorSelect').addEventListener('change',e=>{shirtColor=e.target.value;try{localStorage.setItem('shabihe-saz-outfit-color',shirtColor);}catch(err){}tell('رنگ لباس برای همین دستگاه ذخیره شد.');});
+const vec=(x,y,z)=>new THREE.Vector3(x,y,z);
+let seed=8872;const rand=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+const material=(c,r=.9)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+function box(parent,x,y,z,sx,sy,sz,mat){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat);o.position.set(x,y,z);parent.add(o);return o;}
+function registerSolid(x,z,halfX,halfZ,label='building'){if([x,z,halfX,halfZ].every(Number.isFinite))solidColliders.push({x,z,halfX:Math.max(.1,halfX),halfZ:Math.max(.1,halfZ),label});}
+function solidOverlapScore(x,z,pad){let score=0;for(const c of solidColliders){const ox=c.halfX+pad-Math.abs(x-c.x),oz=c.halfZ+pad-Math.abs(z-c.z);if(ox>0&&oz>0)score+=ox*oz;}return score;}
+function canOccupyAfterMove(x,z,oldX,oldZ,pad){const nextScore=solidOverlapScore(x,z,pad);if(nextScore<=0)return true;const currentScore=solidOverlapScore(oldX,oldZ,pad);return currentScore>0&&nextScore<currentScore-1e-4;}
+function moveGroundObject(object,dx,dz,pad=.38){
+ // تقسیم حرکت به قدم‌های کوچک، به‌ویژه برای سرعت زیاد خودروها؛ مانع از ردشدن از دیوار بین دو فریم می‌شود.
+ const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dz))/.35));const sx=dx/steps,sz=dz/steps;let x=object.position.x,z=object.position.z;
+ for(let i=0;i<steps;i++){
+  const nx=x+sx;if(canOccupyAfterMove(nx,z,x,z,pad))x=nx;
+  const nz=z+sz;if(canOccupyAfterMove(x,nz,x,z,pad))z=nz;
+ }
+ object.position.x=x;object.position.z=z;
+}
+function shadeHex(hex,amount=.38){const n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;const mix=v=>Math.round(v+(255-v)*amount);return '#'+[mix(r),mix(g),mix(b)].map(v=>v.toString(16).padStart(2,'0')).join('');}
+function number(n){return Math.round(n).toLocaleString('fa-IR');}
+function tell(t){const e=$('message');e.textContent=t;e.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.style.display='none',3000);}
+function updateHUD(){
+ $('money').textContent=number(money);$('wheat').textContent=number(wheat);
+ $('property').textContent=ownsLand&&ownsHouse?'زمین و خانه خریداری شده':ownsLand?'زمین خریداری شده':ownsHouse?'خانه خریداری شده':'هنوز ملکی نخریدی';
+ $('seat').textContent=mode==='foot'?'پیاده':mode==='passenger'?'صندلی شاگرد':mode==='carDriver'?'صندلی رانندهٔ خودرو':mode==='bikeDriver'?'روی موتور': 'صندلی رانندهٔ تراکتور';
+ $('status').textContent=mode==='foot'?'پیاده':mode==='passenger'?'همراه راننده':mode==='bikeDriver'?'در حال موتورسواری':'در حال رانندگی';
+ $('camstatus').textContent=mode==='foot'?(firstPerson?'اول‌شخص':'سوم‌شخص'):(cockpit?'داخل کابین':'سوم‌شخص وسیله');
+ $('buyLand').textContent=ownsLand?'زمین خریداری شده':'خرید زمین — ۳۰۰٬۰۰۰';$('buyHouse').textContent=ownsHouse?'خانه خریداری شده':'خرید خانه خالی — ۳۰۰٬۰۰۰';$('buyLand').disabled=ownsLand;$('buyHouse').disabled=ownsHouse;
+ for(const car of cars){const owned=ownedCars.includes(car.userData.carId);const ids={peugeot:'buyPeugeot',pride:'buyPride',shahin:'buyShahin'};const b=document.querySelector(`[data-buy-car="${car.userData.carId}"]`)||$(ids[car.userData.carId]||'__missing__');if(b){b.disabled=owned||money<car.userData.price;b.textContent=owned?(car.userData.carName+' خریداری شد'):'خرید '+car.userData.carName+' — '+number(car.userData.price)+' تومان';const priceLabel=b.closest('.car-card')?.querySelector('.car-price');if(priceLabel)priceLabel.textContent=number(car.userData.price)+' تومان';}}
+}
+function saveGame(){try{let px=2,pz=1;if(person&&THREE){const wp=person.getWorldPosition(new THREE.Vector3());px=wp.x;pz=wp.z;}const data={money,wheat,ownsLand,ownsHouse,ownedCars,shirtColor,player:{x:px,z:pz},tractor:{x:tractor?.position.x??0,z:tractor?.position.z??-2,rotation:tractor?.rotation.y??0},motorbike:{x:motorbike?.position.x??CITY.taleghan.x-30,z:motorbike?.position.z??CITY.taleghan.z+26,rotation:motorbike?.rotation.y??0},cars:cars.map(c=>({id:c.userData.carId,x:c.position.x,z:c.position.z,rotation:c.rotation.y}))};localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){}}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return s&&typeof s==='object'?s:null;}catch(e){return null;}}
+function init(){
+ soohDealerGridHTML=$('dealerPanel').querySelector('.dealer-grid').innerHTML;soohDealerNote=$('dealerPanel').querySelector('.dealer-note').textContent;soohDealerTitle=$('dealerPanel').querySelector('.dealer-head h3').textContent;
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x9bcdf0);scene.fog=new THREE.Fog(0x9bcdf0,230,900);
+ camera=new THREE.PerspectiveCamera(74,innerWidth/innerHeight,.1,1500);
+ renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power',alpha:false});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));renderer.shadowMap.enabled=false;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.domElement.id='gameCanvas';renderer.domElement.setAttribute('aria-label','نمای سه‌بعدی بازی');document.body.insertBefore(renderer.domElement,$('hud'));
+ scene.add(new THREE.HemisphereLight(0xe6f5ff,0x6b593b,2.2));const sun=new THREE.DirectionalLight(0xffedc4,1.8);sun.position.set(-40,90,30);scene.add(sun);
+ Object.assign(materials,{grass:material(0x63904a),road:material(0x555957),dirt:material(0x906c45),line:material(0xf2e8c9),wheat:material(0xe4bc46),stem:material(0x78943b),red:material(0xc93622),dark:material(0x70251c),black:material(0x202522),rubber:material(0x191b1a),rim:material(0xaab3b3),glass:new THREE.MeshStandardMaterial({color:0x77c9e8,transparent:true,opacity:.32,roughness:.3,side:THREE.DoubleSide}),wood:material(0x825031),leaf:material(0x34723a),leaf2:material(0x63994a),house:material(0xe1c49a),roof:material(0x794a35),skin:material(0xc58d62),shirt:material(0x2b5e8d),pants:material(0x353c48),fence:material(0xc6b38a),white:material(0xf4edda),sign:material(0x234b30)});
+ makeWorld();makeTractor();makePerson();makeHamed();
+ // نمونه‌های بدون راننده برای نمایش ماشین/تراکتور بازیکن دیگر.
+ remoteVehicleTemplates.tractor=tractor.clone(true);if(motorbike)remoteVehicleTemplates.bike=motorbike.clone(true);for(const c of cars)remoteVehicleTemplates.cars[c.userData.carId]=c.clone(true);
+ if(multiplayerRole!=='offline'||peerConnection?.open)createRemoteVisuals();
+ const saved=loadGame();if(saved){if(Number.isFinite(saved.money))money=Math.max(0,saved.money);if(Number.isFinite(saved.wheat))wheat=Math.max(0,saved.wheat);ownsLand=!!saved.ownsLand;ownsHouse=!!saved.ownsHouse;ownedCars=Array.isArray(saved.ownedCars)?saved.ownedCars.filter(id=>VALID_CAR_IDS.includes(id)):[];if(typeof saved.shirtColor==='string'&&/^#[0-9a-f]{6}$/i.test(saved.shirtColor))shirtColor=saved.shirtColor;if(saved.player&&Number.isFinite(saved.player.x)&&Number.isFinite(saved.player.z))person.position.set(THREE.MathUtils.clamp(saved.player.x,-1150,1150),0,THREE.MathUtils.clamp(saved.player.z,-3800,80));if(saved.tractor&&Number.isFinite(saved.tractor.x)&&Number.isFinite(saved.tractor.z)){tractor.position.set(THREE.MathUtils.clamp(saved.tractor.x,-1150,1150),0,THREE.MathUtils.clamp(saved.tractor.z,-3800,80));tractor.rotation.y=Number(saved.tractor.rotation)||0;}if(saved.motorbike&&motorbike&&Number.isFinite(saved.motorbike.x)&&Number.isFinite(saved.motorbike.z)){motorbike.position.set(THREE.MathUtils.clamp(saved.motorbike.x,-1150,1150),0,THREE.MathUtils.clamp(saved.motorbike.z,-3800,80));motorbike.rotation.y=Number(saved.motorbike.rotation)||0;}if(Array.isArray(saved.cars)){for(const entry of saved.cars){const c=cars.find(v=>v.userData.carId===entry.id);if(c&&Number.isFinite(entry.x)&&Number.isFinite(entry.z)){c.position.set(THREE.MathUtils.clamp(entry.x,-1150,1150),0,THREE.MathUtils.clamp(entry.z,-3800,80));c.rotation.y=Number(entry.rotation)||0;}}}}
+ if(multiplayerRole!=='offline')spawnLocalAtCommonPoint();
+ showOwnedLand(ownsLand);if(houseProperty){houseProperty.userData.sold=ownsHouse;const houseSign=houseProperty.children[houseProperty.children.length-1];if(ownsHouse&&houseSign?.material?.map)houseSign.material=textTexture(['خانه متعلق به شماست','خرید انجام شد'],'#234a2f','#fff5d5',42);}updateHUD();
+ addEventListener('resize',resize);addEventListener('keydown',onDown,{passive:false});addEventListener('keyup',e=>keys[keyName(e)]=false);addEventListener('blur',clearKeys);document.addEventListener('visibilitychange',()=>{if(document.hidden){clearKeys();saveGame();}});
+ renderer.domElement.addEventListener('click',()=>{if(isMobileDevice)return;if(started&&document.pointerLockElement!==renderer.domElement){try{const p=renderer.domElement.requestPointerLock?.();p?.catch?.(()=>{});}catch(e){}}});
+ document.addEventListener('mousemove',e=>{if(!started||document.pointerLockElement!==renderer.domElement)return;if(mode==='foot'){yaw-=e.movementX*.0024;pitch-=e.movementY*.0018;pitch=THREE.MathUtils.clamp(pitch,-.85,.8);}else{vehicleLookYaw-=e.movementX*.0024;vehicleLookPitch-=e.movementY*.0018;vehicleLookYaw=THREE.MathUtils.clamp(vehicleLookYaw,-1.45,1.45);vehicleLookPitch=THREE.MathUtils.clamp(vehicleLookPitch,-.55,.55);}});
+ document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==renderer.domElement)shiftLock=false;});
+ bindMobileControls();
+ // لمس و کشیدن انگشت روی خود صحنه، دوربین را در گوشی می‌چرخاند؛ هیچ Pointer Lock لازم نیست.
+ let touchLook=null;
+ renderer.domElement.addEventListener('pointerdown',e=>{
+  if(!isMobileDevice||!started||$('dealerPanel').style.display==='block')return;
+  if(e.pointerType!=='touch')return;
+  touchLook={id:e.pointerId,x:e.clientX,y:e.clientY};
+  try{renderer.domElement.setPointerCapture(e.pointerId);}catch(err){}
+ });
+ renderer.domElement.addEventListener('pointermove',e=>{
+  if(!touchLook||e.pointerId!==touchLook.id)return;
+  const dx=e.clientX-touchLook.x,dy=e.clientY-touchLook.y;touchLook.x=e.clientX;touchLook.y=e.clientY;
+  if(mode==='foot'){yaw-=dx*.006;pitch=THREE.MathUtils.clamp(pitch-dy*.004,-.85,.8);}
+  else{vehicleLookYaw=THREE.MathUtils.clamp(vehicleLookYaw-dx*.006,-1.45,1.45);vehicleLookPitch=THREE.MathUtils.clamp(vehicleLookPitch-dy*.004,-.55,.55);}
+  e.preventDefault();
+ },{passive:false});
+ const endTouchLook=e=>{if(touchLook&&e.pointerId===touchLook.id)touchLook=null;};
+ renderer.domElement.addEventListener('pointerup',endTouchLook);renderer.domElement.addEventListener('pointercancel',endTouchLook);renderer.domElement.addEventListener('lostpointercapture',endTouchLook);
+ $('buyLand').addEventListener('click',buyLand);$('buyHouse').addEventListener('click',buyHouse);$('closeDealer').addEventListener('click',()=>{dealerClosed=true;$('dealerPanel').style.display='none';});$('dialogClose').addEventListener('click',closeDialog);wireDealerButtons();$('shirtColorSelect').value=shirtColor;requestAnimationFrame(animate);
+}
+function makeWorld(){
+ // زمین بسیار بزرگ‌تر از مسیر است تا آخر جاده از سطح زمین بیرون نزند.
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(8000,8000),materials.grass);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.12,-1900);scene.add(ground);
+ box(scene,0,-.015,-255,13,.12,710,materials.road);box(scene,-7,-.005,-255,1.1,.045,710,materials.dirt);box(scene,7,-.005,-255,1.1,.045,710,materials.dirt);
+ for(let z=85;z>-610;z-=17)box(scene,0,.05,z,.12,.018,5.8,materials.line);
+ for(let z=65;z>-570;z-=65){for(const x of [-8.2,8.2]){box(scene,x,1.2,z,.09,2.4,.09,materials.black);box(scene,x,2.45,z,.36,.14,.28,materials.line);}}
+ // مزارع و چند خانه کنار جاده
+ for(let i=0;i<7;i++){let z=45-i*55;makeField(-1,z);makeField(1,z-22);makeTree(-13-rand()*13,z-18,.8+rand()*.4);makeTree(13+rand()*13,z-39,.8+rand()*.4);if(i%2===0){makeHouse(-1,z-32);makeHouse(1,z-44);}}
+ for(let i=0;i<14;i++){const h=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),materials.grass);h.scale.set(35+rand()*40,10+rand()*15,35+rand()*30);h.position.set((i%2?1:-1)*(90+rand()*125),-5,-rand()*580);scene.add(h);}
+ makeLandPlot();makeHouseProperty();makeCarDealership();makeVillage();makeLongRoutesAndCities();
+}
+const ROAD_UNITS_PER_KM=10;
+const SOOH_EXIT={x:0,z:-425},JUNCTION={x:0,z:-1025};
+const QAZVIN_ROUTE={x:JUNCTION.x,z:JUNCTION.z,dx:400,dz:-Math.sqrt(1400*1400-400*400),length:1400};
+QAZVIN_ROUTE.ux=QAZVIN_ROUTE.dx/QAZVIN_ROUTE.length;QAZVIN_ROUTE.uz=QAZVIN_ROUTE.dz/QAZVIN_ROUTE.length;
+const TALEGHAN_ROUTE={x:JUNCTION.x,z:JUNCTION.z,dx:-600,dz:-Math.sqrt(2300*2300-600*600),length:2300};
+TALEGHAN_ROUTE.ux=TALEGHAN_ROUTE.dx/TALEGHAN_ROUTE.length;TALEGHAN_ROUTE.uz=TALEGHAN_ROUTE.dz/TALEGHAN_ROUTE.length;
+function routePoint(route,d){return {x:route.x+route.ux*d,z:route.z+route.uz*d};}
+function roadSlab(a,b,width=13,materialObj=materials.road,height=.11){const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.01)return;const g=box(scene,(a.x+b.x)/2,height/2,(a.z+b.z)/2,width,height,len+1,materialObj);g.rotation.y=Math.atan2(-dx,-dz);return g;}
+function buildRouteRoad(route,start=0,end=route.length){for(let d=start;d<end;d+=18){const a=routePoint(route,d),b=routePoint(route,Math.min(end,d+18));roadSlab(a,b,13,materials.road,.10);const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz),yaw=Math.atan2(-dx,-dz);const rx=-dz/len,rz=dx/len;roadSlab({x:a.x+rx*7.2,z:a.z+rz*7.2},{x:b.x+rx*7.2,z:b.z+rz*7.2},1.0,materials.dirt,.045);roadSlab({x:a.x-rx*7.2,z:a.z-rz*7.2},{x:b.x-rx*7.2,z:b.z-rz*7.2},1.0,materials.dirt,.045);if(Math.floor(d/30)!==Math.floor((d+18)/30)){const m=routePoint(route,d+9);const mark=box(scene,m.x,.071,m.z,.15,.025,5.2,materials.line);mark.rotation.y=yaw;}}
+}
+function makeRouteSign(route,km,side,text,english=''){const d=km*ROAD_UNITS_PER_KM,p=routePoint(route,d),rx=-route.uz,rz=route.ux,angle=Math.atan2(-route.ux,-route.uz);return makeRoadSign(p.x+rx*side,p.z+rz*side,text,english,angle,true);}
+function makeNPC(x,z,name,lineOrLines,region='sooh',offerOnlyNo=false){const g=new THREE.Group();g.position.set(x,0,z);const shirtColors={sooh:'#8a6747',qazvin:'#315f92',taleghan:'#4b7650'};const shirt=makeFabricTexture(shirtColors[region]||'#315f92','#d7d5b5','shirt');humanModel(g,shirt);const lines=Array.isArray(lineOrLines)?lineOrLines:[lineOrLines];const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture([name,region==='qazvin'?'پیشنهاد ویژه':region==='taleghan'?'طالقان':'اهالی روستا'],'#233c32','#fff4cd',37).map,transparent:true}));tag.scale.set(3.7,.95,1);tag.position.y=2.85;g.add(tag);g.userData={isNPC:true,npcName:name,lines,region,offerOnlyNo};scene.add(g);npcs.push(g);return g;}
+function makeSellerNPC(name,x,z,region,specialPrice,lines){const n=makeNPC(x,z,name,lines,region,false);n.userData.specialSeller=true;n.userData.specialPrice=specialPrice;specialSellers.push(n);return n;}
+function getRegionLabel(region){return region==='qazvin'?'قزوین':region==='taleghan'?'طالقان':'روستای سُه';}
+function nearestNPC(pos=actorPosition()){let best=null,distance=Infinity;for(const n of npcs){if(!n.userData?.isNPC)continue;const d=pos.distanceTo(n.position);if(d<distance){best=n;distance=d;}}return best?{npc:best,distance}:null;}
+function talkToNearestNPC(){const near=nearestNPC(actorPosition());if(!near||near.distance>(mode==='foot'?5:10)){tell('برای گفتگو به یکی از اهالی نزدیک شو.');return;}clearKeys();shiftLock=false;document.exitPointerLock?.();const n=near.npc;const line=n.userData.lines?.length?n.userData.lines[Math.floor(rand()*n.userData.lines.length)]:'سلام، خوش اومدی!';$('dialogTitle').textContent=n.userData.npcName||'اهالی روستا';$('dialogText').textContent=line;$('dialogClose').textContent=n.userData.offerOnlyNo?'No':'باشه';$('dialogPanel').style.display='block';}
+function closeDialog(){const d=$('dialogPanel');if(d)d.style.display='none';}
+function makeTractorPhotoTexture(){
+ // عکس مرجع واقعی: High Contrast، Wikimedia Commons، CC BY 3.0 DE. عکس به صورت پنل تصویری روی دو سمت کاپوت استفاده می‌شود؛ مدل سه‌بعدی اصلی هم پابرجاست.
+ const url='https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Side_view_of_a_vintage_tractor.JPG/1280px-Side_view_of_a_vintage_tractor.JPG';
+ const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');
+ loader.load(url,imageTexture=>{imageTexture.colorSpace=THREE.SRGBColorSpace;imageTexture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=512;const ctx=canvas.getContext('2d');ctx.fillStyle='#a7a79c';ctx.fillRect(0,0,1024,512);const img=imageTexture.image;/* crop the central tractor body from the licensed side-view photo */const sx=img.width*.08,sy=img.height*.12,sw=img.width*.84,sh=img.height*.76;ctx.drawImage(img,sx,sy,sw,sh,0,0,1024,512);const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());for(const side of [-1,1]){const mat=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});const panel=new THREE.Mesh(new THREE.PlaneGeometry(2.25,1.18),mat);panel.position.set(side*.84,1.46,-.72);panel.rotation.y=side*Math.PI/2;panel.renderOrder=3;tractor.add(panel);}imageTexture.dispose();tractor.userData.hasPhotoTexture=true;console.info('Tractor photo-texture source: High Contrast / Wikimedia Commons, CC BY 3.0 DE.');},undefined,err=>console.warn('Tractor photo texture unavailable; detailed tractor model remains.',err));
+}
+function applyTractorPhotoTexture(){try{makeTractorPhotoTexture();}catch(e){console.warn('Unable to start tractor texture loader.',e);}}
+function makeMotorbike(){motorbike=new THREE.Group();motorbike.name='taleghan-motorbike';const frame=material(0xb82025,.35),metal=material(0x282c30,.5),rubber=materials.rubber,chrome=materials.rim;box(motorbike,0,.69,0,.28,.25,1.45,frame);const tank=new THREE.Mesh(new THREE.SphereGeometry(.38,12,8),frame);tank.scale.set(.82,.78,1.1);tank.position.set(0,1.0,-.23);motorbike.add(tank);box(motorbike,0,1.04,.42,.54,.15,.48,materials.black);box(motorbike,0,1.14,.4,.61,.07,.46,materials.dark);box(motorbike,0,.98,.84,.33,.13,.25,metal);const fork1=box(motorbike,-.17,.75,-.72,.055,.67,.055,chrome),fork2=box(motorbike,.17,.75,-.72,.055,.67,.055,chrome);const handle=box(motorbike,0,1.18,-.76,.76,.065,.07,metal);handle.rotation.z=.02;const lamp=new THREE.Mesh(new THREE.SphereGeometry(.16,10,8),new THREE.MeshStandardMaterial({color:0xfff6ce,emissive:0x665533}));lamp.position.set(0,1.08,-.91);motorbike.add(lamp);const exhaust=box(motorbike,.27,.53,.36,.09,.1,.8,chrome);exhaust.rotation.x=.08;const bikeWheels=[];for(const z of [-.82,.86]){const w=new THREE.Group();w.position.set(0,.37,z);const tire=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.16,20),rubber);tire.rotation.z=Math.PI/2;w.add(tire);const rim=new THREE.Mesh(new THREE.CylinderGeometry(.20,.20,.18,16),chrome);rim.rotation.z=Math.PI/2;w.add(rim);for(let i=0;i<8;i++){const spoke=box(w,0,Math.sin(i*Math.PI/4)*.14,Math.cos(i*Math.PI/4)*.14,.025,.025,.28,chrome);spoke.rotation.x=i*Math.PI/4;}motorbike.add(w);bikeWheels.push(w);}motorbike.userData={wheels:bikeWheels,vehicleType:'bike',freeRide:true};motorbike.position.set(CITY.taleghan.x-32,0,CITY.taleghan.z+28);motorbike.rotation.y=0;scene.add(motorbike);}
+function makeRegionalDealer(region,x,z,vehicleList){const g=new THREE.Group();g.position.set(x,0,z);box(g,0,2.0,0,18,4,8,materials.house);box(g,0,4.15,0,18.6,.25,8.6,materials.roof);box(g,0,1.85,4.08,11,3.1,.12,materials.glass);const title=region==='qazvin'?'نمایشگاه قزوین':'نمایشگاه طالقان';const signs=region==='qazvin'?'تارا | مازراتی | BMW i8':'آلفا رومئو | پژو ۲۰۶';const board=new THREE.Mesh(new THREE.PlaneGeometry(14,1.45),textTexture([title,signs],'#173a31','#ffe38b',37));board.position.set(0,3.45,4.2);g.add(board);scene.add(g);registerSolid(x,z,9,4,'regional-dealership');dealerSpots[region]={x,z};for(let i=0;i<vehicleList.length;i++){const item=vehicleList[i],car=makeCar(item.id,item.name,item.price,item.color,item.shape);car.userData.region=region;car.position.set(x-10+i*10,0,z-13);scene.add(car);cars.push(car);}}
+function makeQazvinCity(){const {x,z}=CITY.qazvin;const plaza=new THREE.Group();plaza.position.set(x,0,z);box(plaza,0,.02,0,90,.05,75,materials.dirt);scene.add(plaza);makeRoadSign(x,z+42,'به قزوین خوش آمدید','WELCOME TO QAZVIN',Math.PI,true);
+ // کاروانسرای سعدالسلطنه؛ بازسازی ساده‌شدهٔ حیاط مرکزی و رواق‌های آجری.
+ const caravan=new THREE.Group();caravan.position.set(x-34,0,z-25);box(caravan,0,1.6,0,42,3.2,34,material(0x9c633f));box(caravan,0,1.65,0,26,3.3,21,materials.dirt);for(const sx of [-18,18])for(let dz=-13;dz<=13;dz+=6){const room=box(caravan,sx,1.45,dz,5.4,2.9,4.8,material(0xaa744b));box(caravan,sx,2.2,dz+2.42,1.2,1.6,.12,materials.dark);}const entry=box(caravan,0,2.0,17,8,4,.45,materials.roof);const arch=new THREE.Mesh(new THREE.TorusGeometry(2.2,.23,8,20,Math.PI),materials.white);arch.position.set(0,2.5,17.35);arch.rotation.z=Math.PI;caravan.add(arch);const ctag=new THREE.Mesh(new THREE.PlaneGeometry(16,2.4),textTexture(['کاروانسرای سعدالسلطنه','بازار تاریخی قزوین'],'#7c442b','#fff2d2',39));ctag.position.set(0,4.2,17.3);caravan.add(ctag);scene.add(caravan);registerSolid(caravan.position.x,caravan.position.z,21,17,'historic-caravanserai');
+ makePublicBuilding(x+30,z-22,'کاخ چهلستون / کلاه‌فرنگی',0xe0c99d,0x4b7790,'قزوین');makePublicBuilding(x+26,z+20,'مسجد جامع عتیق',0xe4d8bc,0x3a7667,'قزوین');makePublicBuilding(x-8,z-58,'حسینیه امینی‌ها',0xe8d2ad,0x6e513f,'قزوین');makePublicBuilding(x+52,z-50,'بازار سنتی قزوین',0xd4b18b,0x8c5835,'قزوین');makePublicBuilding(x-52,z+20,'نانوایی قزوین',0xe9d3ad,0xb76b32,'قزوین');makePublicBuilding(x+52,z+3,'غذاخوری قیمه‌نثار',0xe8c99c,0x8c3d30,'قزوین');
+ for(let i=0;i<8;i++){const hx=x+([-52,-32,-12,8,28,48,65,70][i]),hz=z+([-82,-87,-82,-84,-80,-86,-75,-98][i]);makeHouse(0,hz,{x:hx,w:5.5,d:5.4});const offers=[`می‌خواهی با من برای یک بار گندم‌فروشی شریک شوی؟`,`بیا ماشینم را با ماشینت عوض کنیم.`,`پیشنهاد می‌کنم یک مزرعه در حومه بخری.`,`می‌خواهی در کاروانسرای قدیمی مغازه باز کنی؟`,`بیا با هم یک کارگاه صنایع‌دستی بزنیم.`,`برای حمل بار یک سفر طولانی برویم؟`,`یک قرارداد کشاورزی دارم؛ سهم سودت را می‌دهی؟`,`می‌خواهی غرفهٔ بازار را اجاره کنی؟`];makeNPC(hx+3,hz+4,`اهالی قزوین ${i+1}`,offers[i],'qazvin',true);}
+ // مزارع قزوین بیرون از مرکز شهری
+ makeField(1,z+115,{x:x+68,width:28,length:54,region:'qazvin'});makeField(-1,z+125,{x:x-70,width:27,length:52,region:'qazvin'});makeField(1,z+170,{x:x+75,width:30,length:50,region:'qazvin'});
+ makeSellerNPC('جواد فروشنده',x-7,z+8,'qazvin',30000,['سلام! هر دانه گندم را به قیمت ویژهٔ ۳۰٬۰۰۰ تومان می‌خرم.','گندم تازه آوردی؟ بیا معامله کنیم.']);
+ makeRegionalDealer('qazvin',x+28,z+46,[{id:'q_tara',name:'تارا',price:450000000,color:0x4e5960,shape:'tara'},{id:'q_maserati',name:'مازراتی',price:550000000,color:0x131923,shape:'maserati'},{id:'q_i8',name:'BMW i8',price:60000000000,color:0x8a2029,shape:'i8'}]);
+ // یادمان شهری سبک‌شده
+ const gate=new THREE.Group();gate.position.set(x,0,z+42);for(const px of [-10,10])box(gate,px,3,0,.8,6,.8,materials.roof);box(gate,0,5.8,0,21,1,.8,materials.roof);const tg=new THREE.Mesh(new THREE.PlaneGeometry(18,1.3),textTexture(['قزوین','شهر تاریخی و بازارهای قدیمی'],'#234a2f','#ffe48c',47));tg.position.set(0,5.8,.5);gate.add(tg);scene.add(gate);
+}
+function makeTaleghanCity(){const {x,z}=CITY.taleghan;const square=new THREE.Group();square.position.set(x,0,z);box(square,0,.02,0,84,.05,72,materials.dirt);scene.add(square);makeRoadSign(x,z+42,'به طالقان خوش آمدید','WELCOME TO TALEGHAN',Math.PI,true);
+ makePublicBuilding(x+25,z-18,'بازار طالقان',0xdcc6a2,0x71503b,'طالقان');makePublicBuilding(x-22,z-20,'مسجد و محلهٔ قدیمی',0xe1d3b4,0x527c72,'طالقان');makePublicBuilding(x+25,z+20,'نانوایی طالقان',0xe8cba3,0x9b5a30,'طالقان');makePublicBuilding(x-25,z+18,'میوه‌فروشی',0xe4c9a1,0x4a7d46,'طالقان');
+ for(let i=0;i<8;i++){const hx=x+([-52,-30,-8,14,36,55,-50,48][i]),hz=z+([-76,-82,-77,-84,-79,-88,-101,-105][i]);makeHouse(0,hz,{x:hx,w:5.4,d:5.1});const lines=[`هوای کوهستان امروز خنک است.`,`برای دیدن دریاچهٔ سد به جادهٔ شمالی برو.`,`اینجا باغ و زمین کشاورزی زیاد است.`,`در مسیر آبشارها با احتیاط رانندگی کن.`,`محصول محلی را از بازار تهیه کن.`,`کوه‌ها در روزهای صاف بهتر دیده می‌شوند.`,`به خانه خوش آمدی؛ از در وارد شو.`,`اگر موتور می‌خواهی، کنار میدان پارک شده.`];makeNPC(hx+3,hz+4,`اهالی طالقان ${i+1}`,lines[i],'taleghan',false);}
+ // دریاچهٔ سد طالقان و کوهستان؛ مدل نمادین است، نه نقشهٔ دقیق جغرافیایی.
+ const lakeMat=new THREE.MeshStandardMaterial({color:0x338dbb,metalness:.12,roughness:.22,transparent:true,opacity:.9});const lake=new THREE.Mesh(new THREE.CircleGeometry(45,32),lakeMat);lake.rotation.x=-Math.PI/2;lake.scale.set(1,1,.62);lake.position.set(x-80,.04,z-90);scene.add(lake);const dam=box(scene,x-55,3.2,z-70,90,6,5,material(0x858b91));const waterLine=box(scene,x-55,6.4,z-70,88,.22,5.3,material(0x4ba6cb));const shore=makeRoadSign(x-75,z-24,'سد و دریاچهٔ طالقان','TALEGHAN DAM & LAKE',0,true);
+ for(let i=0;i<9;i++){const mx=x+(i%3-1)*100, mz=z-140-Math.floor(i/3)*42;const hill=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),material(i%2?0x71866b:0x7f8a75));hill.scale.set(42+rand()*18,24+rand()*25,48+rand()*20);hill.position.set(mx,7,mz);scene.add(hill);}
+ makePublicBuilding(x-42,z-130,'مسیر طبیعت‌گردی',0x8cbf9a,0x557c56,'طالقان');
+ makeField(-1,z+110,{x:x-72,width:25,length:52,region:'taleghan'});makeField(1,z+122,{x:x+72,width:25,length:48,region:'taleghan'});
+ makeSellerNPC('حشمت خطر',x+2,z+7,'taleghan',50000,['گندم داری؟ هر دانه را ۵۰٬۰۰۰ تومان می‌خرم.','اینجا معامله‌مان نقدی است؛ اول محصولت را نشان بده.']);
+ makeRegionalDealer('taleghan',x+32,z+46,[{id:'t_alfa',name:'آلفا رومئو',price:1250000000,color:0x711e27,shape:'alfa'},{id:'t_206',name:'پژو ۲۰۶',price:3800000000,color:0xd9d9d2,shape:'peugeot206'}]);makeMotorbike();
+}
+function makeLongRoutesAndCities(){
+ // واحد نقشه: هر ۱۰ واحد بازی معادل ۱ کیلومتر در مسافت‌سنج همین مسیر شبیه‌سازی‌شده است.
+ buildRouteRoad({x:SOOH_EXIT.x,z:SOOH_EXIT.z,ux:0,uz:-1,length:600},185,600);
+ roadSlab({x:-12,z:-1025},{x:12,z:-1025},25,materials.road,.12);
+ buildRouteRoad(QAZVIN_ROUTE);buildRouteRoad(TALEGHAN_ROUTE);
+ makeRoadSign(9,-425,'۲۰۰ کیلومتر تا قزوین','200 km to Qazvin',0,true);
+ makeRoadSign(9,-925,'۱۵۰ کیلومتر تا قزوین','150 km to Qazvin',0,true);
+ makeRouteSign(QAZVIN_ROUTE,0,11,'قزوین ۱۴۰ کیلومتر','Qazvin 140 km');makeRouteSign(TALEGHAN_ROUTE,0,-11,'طالقان ۲۳۰ کیلومتر','Taleghan 230 km');
+ for(const km of [20,40,60,80,100,120,130])makeRouteSign(QAZVIN_ROUTE,km,-9,`قزوین ${140-km} کیلومتر`,'Qazvin');
+ for(const km of [30,80,130,150,190,220])makeRouteSign(TALEGHAN_ROUTE,km,9,`طالقان ${230-km} کیلومتر`,'Taleghan');
+ makeQazvinCity();makeTaleghanCity();
+}
+function makeField(side,z,options={}){
+ const width=options.width||18+rand()*4,length=options.length||30+rand()*10,x=Number.isFinite(options.x)?options.x:side*(17+rand()*4),g=new THREE.Group();g.position.set(x,0,z);box(g,0,.008,0,width,.035,length,materials.dirt);
+ const furrowGeo=new THREE.BoxGeometry(.035,.018,length-.5),furrows=new THREE.InstancedMesh(furrowGeo,material(0x705033),Math.floor(width/1.05)),dummy=new THREE.Object3D();let n=0;for(let xx=-width/2+.45;xx<width/2;xx+=1.05){dummy.position.set(xx,.04,0);dummy.scale.set(1,1,1);dummy.rotation.set(0,0,0);dummy.updateMatrix();furrows.setMatrixAt(n++,dummy.matrix);}furrows.instanceMatrix.needsUpdate=true;g.add(furrows);
+ const plants=[];for(let xx=-width/2+.35;xx<width/2;xx+=.75){for(let zz=-length/2+.35;zz<length/2;zz+=.82){plants.push({x:xx,z:zz,h:.65+rand()*.35,harvested:false,regrow:0});}}
+ const stemGeo=new THREE.CylinderGeometry(.025,.04,1,5),stemMesh=new THREE.InstancedMesh(stemGeo,materials.stem,plants.length),headGeo=new THREE.SphereGeometry(.075,5,4),headMesh=new THREE.InstancedMesh(headGeo,materials.wheat,plants.length);stemMesh.frustumCulled=false;headMesh.frustumCulled=false;
+ for(let i=0;i<plants.length;i++){const p=plants[i];p.index=i;dummy.position.set(p.x,.055+p.h/2,p.z);dummy.scale.set(1,p.h,1);dummy.rotation.set(0,0,(rand()-.5)*.1);dummy.updateMatrix();stemMesh.setMatrixAt(i,dummy.matrix);p.stemMatrix=dummy.matrix.clone();dummy.position.set(p.x,.1+p.h,p.z);dummy.scale.set(.75,1.65,.75);dummy.rotation.set(0,0,0);dummy.updateMatrix();headMesh.setMatrixAt(i,dummy.matrix);p.headMatrix=dummy.matrix.clone();}
+ stemMesh.instanceMatrix.needsUpdate=true;headMesh.instanceMatrix.needsUpdate=true;g.add(stemMesh,headMesh);g.userData={width,length,plants,stemMesh,headMesh,region:options.region||'sooh'};scene.add(g);fields.push(g);return g;
+}
+function makeTree(x,z,s){const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(s);const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.28,2.3,7),materials.wood);trunk.position.y=1.15;g.add(trunk);for(let i=0;i<3;i++){const crown=new THREE.Mesh(new THREE.SphereGeometry(1,7,5),i===1?materials.leaf2:materials.leaf);crown.position.set((rand()-.5)*.4,2.3+i*.45,(rand()-.5)*.4);crown.scale.set(1.05,1.05,1);g.add(crown);}scene.add(g);}
+function makeHouse(side,z,options={}){const g=new THREE.Group();g.position.set(Number.isFinite(options.x)?options.x:side*(25+rand()*5),0,z);const w=options.w||5+rand()*2,d=options.d||5+rand()*2;box(g,0,1.5,0,w,3,d,materials.house);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.8,2.2,4),materials.roof);roof.position.y=4;roof.rotation.y=Math.PI/4;g.add(roof);box(g,0,.8,d/2+.04,.8,1.6,.08,materials.wood);for(const x of [-1.2,1.2])box(g,x,2,d/2+.05,.7,.6,.08,materials.glass);scene.add(g);registerSolid(g.position.x,g.position.z,w/2,d/2,'house');return g;}
+function textTexture(lines,bg='#254a2e',fg='#fff5d5',fontSize=46){const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const c=canvas.getContext('2d');c.fillStyle=bg;c.fillRect(0,0,canvas.width,canvas.height);c.strokeStyle='#f5d36d';c.lineWidth=12;c.strokeRect(8,8,1008,240);c.direction='rtl';c.textAlign='center';c.textBaseline='middle';c.fillStyle=fg;c.font=`bold ${fontSize}px Tahoma, Arial`;if(Array.isArray(lines)&&lines.length>1){c.fillText(lines[0],512,82);c.font=`bold ${Math.round(fontSize*.62)}px Tahoma, Arial`;c.fillText(lines[1],512,170);}else c.fillText(Array.isArray(lines)?lines[0]:lines,512,128);const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});}
+function makeRoadSign(x,z,text,eng,angle=0,big=false){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=angle;const pw=big?2.6:1.8, bw=big?7.2:5.2,bh=big?2.0:1.5;for(const px of [-pw,pw])box(g,px,big?2.05:1.65,0,.18,big?4.1:3.3,.18,materials.wood);const board=new THREE.Mesh(new THREE.PlaneGeometry(bw,bh),textTexture([text,eng],'#234a2f','#fff5d5',big?44:40));board.position.set(0,big?3.3:2.7,.13);g.add(board);scene.add(g);return g;}
+function makeLandPlot(){landPlot=new THREE.Group();landPlot.position.set(36,0,-6);box(landPlot,0,.005,0,24,.025,34,materials.dirt);for(const x of [-12,12])for(const z of [-17,17])box(landPlot,x,.45,z,.25,.9,.25,materials.fence);for(let z=-13;z<=13;z+=4){box(landPlot,-12,.25,z,.14,.5,.14,materials.fence);box(landPlot,12,.25,z,.14,.5,.14,materials.fence);}for(let x=-8;x<=8;x+=4){box(landPlot,x,.25,-17,.14,.5,.14,materials.fence);box(landPlot,x,.25,17,.14,.5,.14,materials.fence);}const sign=new THREE.Mesh(new THREE.PlaneGeometry(5,1.1),textTexture(['زمین خالی برای فروش','۳۰۰٬۰۰۰ تومان'],'#634629','#fff5d5',41));sign.position.set(0,2.2,17.1);landPlot.add(sign);scene.add(landPlot);}
+function showOwnedLand(on){if(landPlot){landPlot.visible=true;if(landPlot.children.length>0&&landPlot.children[landPlot.children.length-1].material?.map){landPlot.children[landPlot.children.length-1].material=textTexture(on?['زمین خریداری شد','متعلق به شما']:['زمین خالی برای فروش','۳۰۰٬۰۰۰ تومان'],'#634629','#fff5d5',41);}}}
+function makeHouseProperty(){houseProperty=new THREE.Group();houseProperty.position.set(-33,0,8);const wall=box(houseProperty,0,1.65,0,7,3.3,6,materials.house);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.3,2.5,4),materials.roof);roof.position.set(0,4.3,0);roof.rotation.y=Math.PI/4;houseProperty.add(roof);box(houseProperty,0,.95,3.05,1.05,1.9,.12,materials.wood);for(const x of [-2,2])box(houseProperty,x,2,3.08,1.1,.8,.08,materials.glass);const sign=new THREE.Mesh(new THREE.PlaneGeometry(5.4,1.15),textTexture(['خانه خالی برای فروش','۳۰۰٬۰۰۰ تومان'],'#634629','#fff5d5',41));sign.position.set(0,2.1,3.4);houseProperty.add(sign);scene.add(houseProperty);registerSolid(houseProperty.position.x,houseProperty.position.z,3.5,3,'property-house');}
+function makePublicBuilding(x,z,label,wallColor=0xe1c49a,roofColor=0x794a35,subtitle='روستای سه'){
+ const g=new THREE.Group();g.position.set(x,0,z);const wall=material(wallColor),roofMat=material(roofColor);
+ box(g,0,1.7,0,7,3.4,6,wall);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.5,2.1,4),roofMat);roof.position.set(0,4.2,0);roof.rotation.y=Math.PI/4;g.add(roof);
+ box(g,0,.95,3.08,1.05,1.9,.12,materials.wood);for(const wx of [-2,2])box(g,wx,2,3.1,1.05,.75,.1,materials.glass);
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.3,1.15),textTexture([label,subtitle],'#234a2f','#fff5d5',43));sign.position.set(0,3.1,3.12);g.add(sign);scene.add(g);registerSolid(x,z,3.5,3,'public-building');return g;
+}
+function makeVillage(){
+ const arch=new THREE.Group();arch.position.set(0,0,-425);for(const x of [-7,7])box(arch,x,3.3,0,.45,6.6,.45,materials.wood);box(arch,0,6.25,0,14.5,1.2,.55,materials.wood);const welcome=new THREE.Mesh(new THREE.PlaneGeometry(13.4,.95),textTexture(['به روستای سه رسیدید','به روستای زیبا خوش آمدید'],'#214e2c','#ffe59a',50));welcome.position.set(0,6.25,.31);arch.add(welcome);scene.add(arch);
+ for(let i=0;i<7;i++){const h=makeHouse(i%2?1:-1,-450-i*12);makeNPC(h.position.x+3,h.position.z+2,`اهالی سُه ${i+1}`,[`سلام! اینجا سُه است؛ به مزرعه‌ها سر بزن.`,`جادهٔ بلند از خروجی روستا به دو مسیر می‌رسد.`,`اگر گندم داری، حامد فروشنده نزدیک بازار است.`,`کوچه‌های قدیمی روستا را با دقت بگرد.`,`امیدوارم محصول امسالت خوب باشد.`,`از دیوار خانه رد نشو؛ از در وارد شو.`,`در مسیر مراقب دوراهی باش!`][i],'sooh',false);if(i%2===0)makeTree(i%4?15:-15,-448-i*15,.95+rand()*.3);}
+ const market=new THREE.Group();market.position.set(-12,0,-442);box(market,0,1.6,0,6,3.2,5,materials.house);const roof=new THREE.Mesh(new THREE.ConeGeometry(5,2.2,4),materials.roof);roof.position.y=4;roof.rotation.y=Math.PI/4;market.add(roof);const sign=new THREE.Mesh(new THREE.PlaneGeometry(5,1.1),textTexture(['بازار روستا','خرید و فروش محصولات'],'#234a2f','#fff5d5',40));sign.position.set(0,2.8,2.6);market.add(sign);scene.add(market);registerSolid(-12,-442,3,2.5,'village-market');
+ // امکاناتی که برای سوهان طالقان در معرفی‌های عمومی ثبت شده‌اند؛ مدل‌های داخل بازی ساده‌سازی شده‌اند.
+ makePublicBuilding(-22,-470,'مدرسه روستا',0xe8d9ab,0x466c9b);
+ const mosque=makePublicBuilding(21,-468,'مسجد روستا',0xe8d8b5,0x39765a);const dome=new THREE.Mesh(new THREE.SphereGeometry(1.55,12,8),material(0x4d997b));dome.scale.y=.72;dome.position.set(21,4.3,-468);scene.add(dome);const minaret=new THREE.Mesh(new THREE.CylinderGeometry(.35,.48,6.6,8),material(0xe7d7b8));minaret.position.set(27,3.3,-468);scene.add(minaret);const minaretTop=new THREE.Mesh(new THREE.ConeGeometry(.55,1.4,8),material(0x4d997b));minaretTop.position.set(27,7.2,-468);scene.add(minaretTop);
+ makePublicBuilding(-23,-496,'بقالی روستا',0xe8cba3,0x70472d);makePublicBuilding(22,-496,'گوشت‌فروشی',0xe6c9a2,0x923c34);
+ makePublicBuilding(-22,-520,'دفتر پست و مخابرات',0xd4dbe0,0x4d6480);makePublicBuilding(22,-520,'شورای روستا',0xe0d2b4,0x776147);
+ // زمین ورزشی ساده با خطوط سفید
+ const court=new THREE.Group();court.position.set(0,.025,-500);box(court,0,0,0,17,.04,10,material(0x4f8d54));for(const x of [-8.2,8.2])box(court,x,.04,0,.12,.025,9,materials.white);for(const z of [-4.5,4.5])box(court,0,.04,z,16.4,.025,.12,materials.white);box(court,0,.045,0,.1,.03,9,materials.white);const hoopMat=material(0xe6e6e6);for(const x of [-7,7]){box(court,x,1.8,-3.2,.12,3.2,.12,hoopMat);box(court,x,3.3,-3.2,1.2,.8,.08,hoopMat);}scene.add(court);
+ // آبشار نمادین در دامنه دورتر؛ مکان دقیق و ابعاد بازی صرفاً تقریبی است.
+ const cliff=box(scene,94,9,-487,20,20,32,material(0x807b70));cliff.rotation.y=.25;const waterMat=new THREE.MeshStandardMaterial({color:0x5bc8ed,transparent:true,opacity:.82,roughness:.2});const falls=new THREE.Mesh(new THREE.BoxGeometry(3.2,10,1.1),waterMat);falls.position.set(84,5,-480);scene.add(falls);const pool=new THREE.Mesh(new THREE.CylinderGeometry(5,6,.3,16),new THREE.MeshStandardMaterial({color:0x338db4,transparent:true,opacity:.8}));pool.rotation.x=0;pool.position.set(84,.05,-474);scene.add(pool);makeRoadSign(89,-462,'آبشار سوهان (چره)','SOOHAN WATERFALL');
+}
+const fabricMaterialCache=new Map();let skinMaterialCache=null,hairMaterialCache=null,faceTextureCache=null;
+function makeFabricTexture(base,accent,kind='shirt'){
+ const cacheKey=base+'|'+accent+'|'+kind;if(fabricMaterialCache.has(cacheKey))return fabricMaterialCache.get(cacheKey);
+ const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
+ x.fillStyle=base;x.fillRect(0,0,512,512);const grad=x.createLinearGradient(0,0,0,512);grad.addColorStop(0,'rgba(255,255,255,.12)');grad.addColorStop(.48,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.16)');x.fillStyle=grad;x.fillRect(0,0,512,512);
+ for(let i=0;i<512;i+=3){x.strokeStyle=i%6===0?'rgba(255,255,255,.055)':'rgba(0,0,0,.035)';x.lineWidth=1;x.beginPath();x.moveTo(i,0);x.lineTo(i,512);x.stroke();}
+ for(let i=0;i<512;i+=4){x.strokeStyle=i%8===0?'rgba(255,255,255,.035)':'rgba(0,0,0,.028)';x.lineWidth=1;x.beginPath();x.moveTo(0,i);x.lineTo(512,i);x.stroke();}
+ let seed=kind==='shirt'?413:719;const rnd=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+ for(let i=0;i<700;i++){x.fillStyle=i%2?'rgba(255,255,255,.045)':'rgba(0,0,0,.04)';x.fillRect(rnd()*512,rnd()*512,1+rnd()*2,1+rnd()*2);}
+ x.strokeStyle=accent;x.lineWidth=3;x.lineCap='round';
+ if(kind==='shirt'){
+  x.strokeStyle='rgba(225,239,245,.13)';x.lineWidth=2;for(let i=16;i<512;i+=46){x.beginPath();x.moveTo(i,0);x.lineTo(i,512);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(512,i);x.stroke();}
+  const placket=x.createLinearGradient(240,0,274,0);placket.addColorStop(0,'rgba(0,0,0,.18)');placket.addColorStop(.5,'rgba(255,255,255,.11)');placket.addColorStop(1,'rgba(0,0,0,.16)');x.fillStyle=placket;x.fillRect(246,72,20,365);
+  x.strokeStyle=accent;x.lineWidth=4;x.beginPath();x.moveTo(246,70);x.lineTo(246,438);x.stroke();
+  for(let y=122;y<423;y+=54){x.fillStyle='#d9d8c4';x.beginPath();x.arc(256,y,4.5,0,Math.PI*2);x.fill();x.fillStyle='rgba(0,0,0,.25)';x.beginPath();x.arc(257,y+1,2,0,Math.PI*2);x.fill();}
+  x.fillStyle='rgba(8,23,32,.22)';x.beginPath();x.moveTo(195,65);x.lineTo(240,87);x.lineTo(222,131);x.closePath();x.fill();x.beginPath();x.moveTo(317,65);x.lineTo(272,87);x.lineTo(290,131);x.closePath();x.fill();
+  x.strokeStyle=accent;x.lineWidth=3;x.strokeRect(142,215,76,77);x.strokeRect(294,215,76,77);
+  x.fillStyle='rgba(255,255,255,.09)';x.fillRect(146,219,68,6);x.fillRect(298,219,68,6);
+  x.strokeStyle='rgba(255,255,255,.30)';x.setLineDash([5,5]);x.strokeRect(12,12,488,488);x.setLineDash([]);
+ }else if(kind==='pants'){
+  x.strokeStyle='rgba(166,190,204,.20)';x.lineWidth=3;x.beginPath();x.moveTo(256,0);x.lineTo(256,512);x.stroke();
+  x.strokeStyle=accent;x.lineWidth=3;x.beginPath();x.moveTo(94,0);x.lineTo(94,512);x.moveTo(418,0);x.lineTo(418,512);x.stroke();
+  x.strokeStyle='rgba(5,10,15,.45)';x.lineWidth=9;x.beginPath();x.moveTo(256,115);x.lineTo(256,510);x.stroke();
+  x.strokeStyle=accent;x.lineWidth=2;for(let i=0;i<512;i+=14){x.beginPath();x.moveTo(62,i);x.lineTo(90,i+5);x.moveTo(418,i);x.lineTo(446,i+5);x.stroke();}
+  x.strokeStyle='rgba(205,216,223,.7)';x.lineWidth=3;x.strokeRect(115,40,65,80);x.strokeRect(331,40,65,80);
+  x.fillStyle='rgba(0,0,0,.2)';x.fillRect(0,0,512,22);x.fillRect(0,490,512,22);
+ }else{x.strokeStyle=accent;x.lineWidth=3;x.strokeRect(12,12,488,488);}
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;
+ const mat=new THREE.MeshStandardMaterial({map:t,roughness:.91,metalness:0});fabricMaterialCache.set(cacheKey,mat);return mat;
+}
+function makeSkinMaterial(){
+ if(skinMaterialCache)return skinMaterialCache;
+ const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');
+ const grad=x.createRadialGradient(94,62,8,128,128,190);grad.addColorStop(0,'#e6bb96');grad.addColorStop(.55,'#c9916b');grad.addColorStop(1,'#9b674a');x.fillStyle=grad;x.fillRect(0,0,256,256);
+ let seed=221;const rnd=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+ for(let i=0;i<900;i++){x.fillStyle=i%3?'rgba(255,235,210,.055)':'rgba(92,48,29,.04)';x.beginPath();x.arc(rnd()*256,rnd()*256,.35+rnd()*1.1,0,Math.PI*2);x.fill();}
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ skinMaterialCache=new THREE.MeshStandardMaterial({map:tex,color:0xffffff,roughness:.9,metalness:0});return skinMaterialCache;
+}
+function makeHairMaterial(){
+ if(hairMaterialCache)return hairMaterialCache;
+ const c=document.createElement('canvas');c.width=256;c.height=256;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,256,256);g.addColorStop(0,'#1e1b1a');g.addColorStop(.55,'#302722');g.addColorStop(1,'#100f10');x.fillStyle=g;x.fillRect(0,0,256,256);
+ for(let i=0;i<110;i++){const u=(i*47)%256;x.strokeStyle=i%2?'rgba(210,170,120,.12)':'rgba(0,0,0,.22)';x.lineWidth=1.2;x.beginPath();x.moveTo(u,0);x.quadraticCurveTo(u-10,110,u+5,256);x.stroke();}
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;hairMaterialCache=new THREE.MeshStandardMaterial({map:tex,color:0xffffff,roughness:.96});return hairMaterialCache;
+}
+function makeFaceTexture(){
+ if(faceTextureCache)return faceTextureCache;
+ const c=document.createElement('canvas');c.width=512;c.height=512;const x=c.getContext('2d');
+ const gr=x.createRadialGradient(244,210,35,256,256,340);gr.addColorStop(0,'#e8bd98');gr.addColorStop(.72,'#c99068');gr.addColorStop(1,'#a56e50');x.fillStyle=gr;x.fillRect(0,0,512,512);
+ for(const ex of [145,367]){const cheek=x.createRadialGradient(ex,306,2,ex,306,72);cheek.addColorStop(0,'rgba(190,92,76,.18)');cheek.addColorStop(1,'rgba(190,92,76,0)');x.fillStyle=cheek;x.fillRect(ex-75,235,150,140);}
+ let seed=413;const rnd=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);for(let i=0;i<420;i++){x.fillStyle=i%2?'rgba(255,242,220,.10)':'rgba(89,48,31,.07)';x.beginPath();x.arc(rnd()*512,rnd()*512,.5+rnd()*1.3,0,Math.PI*2);x.fill();}
+ for(const ex of [158,354]){x.fillStyle='#30231d';x.beginPath();x.moveTo(ex-54,176);x.quadraticCurveTo(ex,146,ex+53,176);x.lineTo(ex+46,189);x.quadraticCurveTo(ex,169,ex-48,190);x.closePath();x.fill();x.fillStyle='#f4e6d5';x.beginPath();x.ellipse(ex,222,43,28,0,0,Math.PI*2);x.fill();x.fillStyle='#6b5038';x.beginPath();x.arc(ex,222,20,0,Math.PI*2);x.fill();x.fillStyle='#181411';x.beginPath();x.arc(ex,223,11,0,Math.PI*2);x.fill();x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(ex-6,215,6,0,Math.PI*2);x.fill();}
+ x.fillStyle='rgba(118,70,47,.25)';x.beginPath();x.moveTo(256,223);x.lineTo(231,302);x.quadraticCurveTo(256,319,283,302);x.closePath();x.fill();x.fillStyle='#bf855f';x.beginPath();x.moveTo(256,224);x.lineTo(239,293);x.lineTo(273,293);x.closePath();x.fill();
+ x.fillStyle='#74483a';x.beginPath();x.moveTo(175,331);x.quadraticCurveTo(256,354,337,331);x.quadraticCurveTo(256,379,175,331);x.fill();x.fillStyle='#8c463d';x.beginPath();x.ellipse(256,350,47,10,0,0,Math.PI*2);x.fill();
+ const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;faceTextureCache=t;return t;
+}
+function humanModel(parent,shirtMaterial=null){
+ const g=new THREE.Group();
+ const shirt=shirtMaterial||makeFabricTexture('#276487','#a6d6e0','shirt');
+ const pants=makeFabricTexture('#303b49','#9ab4c7','pants');
+ const skin=makeSkinMaterial(),hair=makeHairMaterial(),shoe=makeFabricTexture('#17191a','#73777a','shoe');
+ const beltMat=material(0x29201b,.72),buckleMat=material(0xc8b887,.35),buttonMat=material(0xe3d9ba,.45),soleMat=material(0x0b0c0d,.85);
+ const torso=new THREE.Mesh(new THREE.CylinderGeometry(.25,.32,.77,14,2),shirt);torso.position.y=1.28;g.add(torso);
+ const collarL=new THREE.Mesh(new THREE.BoxGeometry(.15,.07,.04),shirt);collarL.position.set(-.075,1.62,-.242);collarL.rotation.z=-.25;g.add(collarL);
+ const collarR=new THREE.Mesh(new THREE.BoxGeometry(.15,.07,.04),shirt);collarR.position.set(.075,1.62,-.242);collarR.rotation.z=.25;g.add(collarR);
+ for(let y=1.14;y<=1.49;y+=.085){const b=new THREE.Mesh(new THREE.SphereGeometry(.014,6,5),buttonMat);b.position.set(0,y,-.287);g.add(b);}
+ const belt=new THREE.Mesh(new THREE.BoxGeometry(.56,.075,.34),beltMat);belt.position.set(0,.94,0);g.add(belt);
+ const buckle=new THREE.Mesh(new THREE.BoxGeometry(.085,.055,.025),buckleMat);buckle.position.set(0,.94,-.178);g.add(buckle);
+ const neck=new THREE.Mesh(new THREE.CylinderGeometry(.085,.095,.15,10),skin);neck.position.y=1.72;g.add(neck);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.225,20,16),skin);head.position.y=1.88;g.add(head);
+ const face=new THREE.Mesh(new THREE.PlaneGeometry(.285,.29),new THREE.MeshStandardMaterial({map:makeFaceTexture(),roughness:.9,metalness:0,side:THREE.DoubleSide}));face.position.set(0,1.87,-.207);g.add(face);
+ const cap=new THREE.Mesh(new THREE.SphereGeometry(.233,16,10,0,Math.PI*2,0,Math.PI*.52),hair);cap.position.y=2.0;g.add(cap);
+ for(const side of [-1,1]){const ear=new THREE.Mesh(new THREE.SphereGeometry(.047,8,7),skin);ear.position.set(side*.218,1.86,-.005);ear.scale.set(.7,1.25,.65);g.add(ear);const sideburn=new THREE.Mesh(new THREE.SphereGeometry(.065,8,6),hair);sideburn.position.set(side*.19,1.86,-.04);sideburn.scale.set(.55,1.4,.8);g.add(sideburn);}
+ const joints={leftLeg:null,rightLeg:null,leftKnee:null,rightKnee:null,leftArm:null,rightArm:null,leftElbow:null,rightElbow:null,phase:0,blend:0};
+ function limb(parentMesh,x,y,upperLen,lowerLen,mat,kind,side){
+  const pivot=new THREE.Group();pivot.position.set(x,y,0);parentMesh.add(pivot);
+  const upper=new THREE.Mesh(new THREE.CylinderGeometry(kind==='arm'?.075:.105,kind==='arm'?.09:.085,upperLen,10),mat);upper.position.y=-upperLen/2;pivot.add(upper);
+  const joint=new THREE.Group();joint.position.y=-upperLen;pivot.add(joint);
+  const jointBall=new THREE.Mesh(new THREE.SphereGeometry(kind==='arm'?.073:.083,8,6),mat);joint.add(jointBall);
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(kind==='arm'?.055:.072,kind==='arm'?.065:.068,lowerLen,10),mat);lower.position.y=-lowerLen/2;joint.add(lower);
+  if(kind==='arm'){const hand=new THREE.Mesh(new THREE.SphereGeometry(.073,9,7),skin);hand.position.y=-lowerLen-.035;joint.add(hand);}
+  else{box(joint,0,-lowerLen-.08,-.09,.20,.12,.32,shoe);box(joint,0,-lowerLen-.135,-.075,.205,.035,.33,soleMat);}
+  if(kind==='arm'){if(side<0){joints.leftArm=pivot;joints.leftElbow=joint;}else{joints.rightArm=pivot;joints.rightElbow=joint;}}
+  else{if(side<0){joints.leftLeg=pivot;joints.leftKnee=joint;}else{joints.rightLeg=pivot;joints.rightKnee=joint;}}
+ }
+ limb(g,-.29,1.53,.33,.30,shirt,'arm',-1);limb(g,.29,1.53,.33,.30,shirt,'arm',1);
+ limb(g,-.15,.91,.43,.42,pants,'leg',-1);limb(g,.15,.91,.43,.42,pants,'leg',1);
+ g.userData.humanRig=joints;parent.add(g);return g;
+}
+function animateHuman(g,dt,walking=false){
+ const rig=g?.userData?.humanRig;if(!rig)return;
+ rig.blend+=( (walking?1:0)-rig.blend)*Math.min(1,dt*9);
+ if(walking)rig.phase+=dt*9;
+ const swing=Math.sin(rig.phase)*.62*rig.blend;
+ if(rig.leftLeg)rig.leftLeg.rotation.x=swing;
+ if(rig.rightLeg)rig.rightLeg.rotation.x=-swing;
+ if(rig.leftKnee)rig.leftKnee.rotation.x=Math.max(0,-swing)*.85;
+ if(rig.rightKnee)rig.rightKnee.rotation.x=Math.max(0,swing)*.85;
+ if(rig.leftArm)rig.leftArm.rotation.x=-swing*.72;
+ if(rig.rightArm)rig.rightArm.rotation.x=swing*.72;
+ if(rig.leftElbow)rig.leftElbow.rotation.x=.12+Math.max(0,swing)*.25;
+ if(rig.rightElbow)rig.rightElbow.rotation.x=.12+Math.max(0,-swing)*.25;
+ g.position.y=walking?Math.abs(Math.sin(rig.phase*2))*.025:0;
+}
+function makeHamed(){hamed=new THREE.Group();hamed.position.set(10,0,-440);hamedBody=humanModel(hamed,makeFabricTexture('#a94f32','#e2a27e','shirt'));const name=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture(['حامد فروشنده','خریدار گندم'],'#315c35','#ffffff',46).map,transparent:true}));name.scale.set(4.6,1.15,1);name.position.set(0,3.15,0);hamed.add(name);hamed.userData={isNPC:true,npcName:'حامد فروشنده',region:'sooh',lines:['گندمت را با قیمت ویژه می‌خرم.','محصول تازه داری؟ بیا معامله کنیم.'],specialSeller:true,specialPrice:10000};scene.add(hamed);npcs.push(hamed);specialSellers.push(hamed);}
+function makeTractor(){
+ tractor=new THREE.Group();scene.add(tractor);box(tractor,0,.9,0,1.7,.4,3.2,materials.dark);box(tractor,0,1.45,-.8,1.6,.8,1.65,materials.red);box(tractor,0,1.35,-1.64,1,.48,.08,materials.black);for(const x of [-.55,.55])box(tractor,x,1.67,-1.7,.22,.17,.08,materials.line);
+ // کابین با پنجره شفاف و صندلی‌های مشخص
+ box(tractor,0,3.03,.45,1.9,.16,1.7,materials.red);for(const x of [-.82,.82]){box(tractor,x,2.3,.45,.12,1.4,.12,materials.dark);box(tractor,x,2.38,.45,.035,1,.95,materials.glass);}for(const z of [-.32,1.22])box(tractor,0,2.3,z,1.65,1.4,.07,materials.glass);
+ for(const x of [-.42,.42]){box(tractor,x,1.48,.55,.46,.16,.46,materials.black);box(tractor,x,1.74,.72,.46,.4,.12,materials.black);}steeringWheel=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,6,14),materials.black);steeringWheel.position.set(-.36,2.05,.05);steeringWheel.rotation.x=.5;tractor.add(steeringWheel);
+ function wheel(x,z,r,w,isFront){const g=new THREE.Group();g.position.set(x,r,z);const tire=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,14),materials.rubber);tire.rotation.z=Math.PI/2;g.add(tire);const rim=new THREE.Mesh(new THREE.CylinderGeometry(r*.5,r*.5,w+.03,12),materials.rim);rim.rotation.z=Math.PI/2;g.add(rim);tractor.add(g);wheels.push({g,isFront});}wheel(-.95,-1,.4,.28,true);wheel(.95,-1,.4,.28,true);wheel(-1,1,.68,.35,false);wheel(1,1,.68,.35,false);tractor.position.set(0,0,-2);applyTractorPhotoTexture();
+}
+
+function makeCar(id,name,price,color,shape){
+ const g=new THREE.Group();
+ const paint=new THREE.MeshStandardMaterial({color,roughness:shape==='shahin'?.24:.34,metalness:.28});
+ const highlight=new THREE.MeshStandardMaterial({color:new THREE.Color(color).lerp(new THREE.Color(0xffffff),.17),roughness:.29,metalness:.22});
+ const trim=material(0x171b1c,.48),glass=new THREE.MeshPhysicalMaterial({color:shape==='shahin'?0x142e3a:0x263d49,roughness:.15,metalness:.12,transparent:true,opacity:.83,side:THREE.DoubleSide}),chrome=material(0xc6cdcf,.22),lamp=new THREE.MeshStandardMaterial({color:0xfff2cf,emissive:0x5b5038,roughness:.2}),tail=new THREE.MeshStandardMaterial({color:0xc91d24,emissive:0x410509,roughness:.22}),orange=new THREE.MeshStandardMaterial({color:0xffa332,emissive:0x4c1c00});
+ const specs={
+  peugeot:{L:4.42,W:1.76,hood:.32,trunk:.35,cabinL:2.03,cabinW:1.34,roofY:1.57,frontTop:-.72,backTop:.76,frontBase:-1.27,backBase:.98,wheelZ:1.42,wheelR:.34,bumper:0x262929},
+  pride:{L:3.72,W:1.62,hood:.25,trunk:.32,cabinL:1.68,cabinW:1.25,roofY:1.48,frontTop:-.49,backTop:.61,frontBase:-1.02,backBase:.92,wheelZ:1.18,wheelR:.31,bumper:0x292b2a},
+  shahin:{L:4.48,W:1.82,hood:.37,trunk:.30,cabinL:2.13,cabinW:1.39,roofY:1.64,frontTop:-.78,backTop:.83,frontBase:-1.28,backBase:1.04,wheelZ:1.46,wheelR:.35,bumper:0x161a1b},
+  tara:{L:4.53,W:1.80,hood:.36,trunk:.36,cabinL:2.10,cabinW:1.38,roofY:1.63,frontTop:-.75,backTop:.82,frontBase:-1.30,backBase:1.08,wheelZ:1.48,wheelR:.35,bumper:0x1b2024},
+  maserati:{L:4.95,W:1.91,hood:.42,trunk:.38,cabinL:2.25,cabinW:1.48,roofY:1.56,frontTop:-.88,backTop:.84,frontBase:-1.42,backBase:1.15,wheelZ:1.58,wheelR:.37,bumper:0x171a1d},
+  i8:{L:4.75,W:1.98,hood:.40,trunk:.30,cabinL:2.25,cabinW:1.50,roofY:1.50,frontTop:-.86,backTop:.78,frontBase:-1.38,backBase:1.12,wheelZ:1.58,wheelR:.37,bumper:0x16191c},
+  alfa:{L:4.48,W:1.86,hood:.39,trunk:.34,cabinL:2.16,cabinW:1.42,roofY:1.60,frontTop:-.82,backTop:.82,frontBase:-1.33,backBase:1.08,wheelZ:1.49,wheelR:.36,bumper:0x202124},
+  peugeot206:{L:3.83,W:1.70,hood:.28,trunk:.28,cabinL:1.75,cabinW:1.31,roofY:1.55,frontTop:-.55,backTop:.64,frontBase:-1.08,backBase:.98,wheelZ:1.24,wheelR:.32,bumper:0x242729}
+ };
+ const sp=specs[shape]||specs.peugeot,L=sp.L,W=sp.W;
+ const mk=(x,y,z,sx,sy,sz,mat)=>box(g,x,y,z,sx,sy,sz,mat);
+ // بدنهٔ حجمی با عرض و ارتفاع متغیر در طول خودرو؛ هر مدل شمایل جداگانه دارد.
+ const profile={
+  peugeot:[[-.50,.82,.73],[-.43,.97,.89],[-.25,1.00,.94],[-.06,1.00,.84],[.20,.99,.83],[.40,.95,.91],[.50,.82,.74]],
+  pride:[[-.50,.77,.68],[-.41,.93,.83],[-.25,.99,.90],[-.03,.98,.80],[.23,.95,.80],[.42,.91,.87],[.50,.79,.70]],
+  shahin:[[-.50,.80,.74],[-.43,.94,.86],[-.24,1.00,.92],[-.04,.98,.82],[.22,.98,.81],[.42,.92,.89],[.50,.80,.73]],
+  tara:[[-.50,.81,.74],[-.43,.95,.87],[-.24,1,.92],[-.04,.98,.84],[.22,.98,.82],[.42,.93,.89],[.50,.81,.74]],
+  maserati:[[-.50,.82,.76],[-.43,.94,.88],[-.20,1,.96],[0,1,.86],[.22,.99,.86],[.42,.95,.92],[.50,.81,.76]],
+  i8:[[-.50,.80,.76],[-.43,.94,.91],[-.22,1,.98],[0,1,.88],[.20,.98,.85],[.42,.94,.90],[.50,.80,.76]],
+  alfa:[[-.50,.80,.75],[-.42,.94,.89],[-.22,1,.94],[0,1,.84],[.22,.98,.84],[.42,.92,.90],[.50,.80,.75]],
+  peugeot206:[[-.50,.78,.70],[-.42,.93,.86],[-.22,.99,.92],[0,.99,.82],[.23,.96,.80],[.42,.90,.86],[.50,.78,.70]]
+ }[shape]||[[-.5,.82,.73],[-.4,.96,.9],[0,1,.85],[.4,.95,.9],[.5,.82,.73]];
+ const positions=[],indices=[];
+ for(const [zN,wScale,topY] of profile){const z=zN*L,w=(W*wScale)/2;positions.push(-w,.43,z,w,.43,z,-w,topY,z,w,topY,z);}
+ for(let i=0;i<profile.length-1;i++){
+  const a=i*4,b=(i+1)*4;
+  // ترتیب رئوس طوری است که نرمال سطح‌ها به بیرون بدنه باشند.
+  indices.push(a,b,a+2, a+2,b,b+2);                    // سمت چپ
+  indices.push(a+1,a+3,b+1, a+3,b+3,b+1);              // سمت راست
+  indices.push(a+2,b+2,a+3, a+3,b+2,b+3);              // سقف کاپوت/صندوق
+  indices.push(a,a+1,b, a+1,b+1,b);                    // کف
+ }
+ // بستن دماغه و انتهای بدنه تا داخل خودرو از بیرون دیده نشود.
+ indices.push(0,2,1, 1,2,3);
+ const end=(profile.length-1)*4;
+ indices.push(end,end+1,end+2, end+1,end+3,end+2);
+ const hullGeo=new THREE.BufferGeometry();hullGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));hullGeo.setIndex(indices);hullGeo.computeVertexNormals();
+ const hull=new THREE.Mesh(hullGeo,paint);hull.castShadow=true;hull.receiveShadow=true;g.add(hull);
+ // سپرها با عرض جداگانه برای دماغه و صندوق
+ mk(0,.425,-L*.505,W*(shape==='pride'?1.02:1.015),.20,.16,new THREE.MeshStandardMaterial({color:sp.bumper,roughness:.52}));
+ mk(0,.425,L*.505,W*1.015,.20,.16,new THREE.MeshStandardMaterial({color:sp.bumper,roughness:.52}));
+ // زیررکاب و زه جانبی
+ for(const side of [-1,1]){
+  mk(side*W*.485,.56,0,.055,.16,L*.68,trim);
+  mk(side*W*.494,.66,0,.028,.07,L*.65,highlight);
+  // آینه‌های بغل
+  const mirror=mk(side*W*.535,1.08,-.62,.19,.12,.20,paint);mirror.rotation.y=side*.12;
+  mk(side*W*.455,1.07,-.08,.025,.035,.055,chrome);
+ }
+ // کابین با سقف و ستون‌ها؛ شیشه‌ها جدا هستند تا از زاویه‌های مختلف حجم داشته باشند
+ const cabCenter=(sp.frontBase+sp.backBase)/2,cabLength=sp.backBase-sp.frontBase;
+ mk(0,1.17,cabCenter,sp.cabinW,.48,cabLength,glass);
+ mk(0,sp.roofY, (sp.frontTop+sp.backTop)/2,sp.cabinW*.94,.105,Math.abs(sp.backTop-sp.frontTop)+.18,paint);
+ // شیشه جلو و عقب با زاویه، همراه با قاب‌های بدنه
+ const windshield=mk(0,1.30,sp.frontBase-.02,sp.cabinW*.88,.33,.045,glass);windshield.rotation.x=shape==='shahin'?-.43:-.28;
+ const rearGlass=mk(0,1.30,sp.backBase+.015,sp.cabinW*.86,.31,.045,glass);rearGlass.rotation.x=shape==='shahin'?.38:.27;
+ for(const side of [-1,1]){
+  // ستون A، B و C
+  for(const z of [sp.frontTop-.02,0,sp.backTop+.02]){
+   const pillar=mk(side*sp.cabinW*.49,1.31,z,.055,.48,.075,paint);pillar.rotation.x=z<0?-.15:z>0?.12:0;
+  }
+  // جداکنندهٔ شیشهٔ جلو و عقب
+  mk(side*sp.cabinW*.49,1.17,(sp.frontTop+sp.backTop)/2,.045,.34,.045,paint);
+  // دستگیره‌های در و نوار کرومی دور پنجره
+  for(const z of [-.25,.36])mk(side*(W*.505),.91,z,.025,.045,.16,shape==='shahin'?chrome:trim);
+  mk(side*sp.cabinW*.49,1.09,(sp.frontBase+sp.backBase)/2,.025,.025,cabLength*.84,chrome);
+ }
+ // چراغ‌ها، جلوپنجره و جزئیات خاص هر مدل
+ const grille=['shahin','tara','maserati','i8'].includes(shape)? .76:shape==='pride'?.50:shape==='peugeot206'?.55:.64;
+ mk(0,.70,-L*.515,grille,.20,.045,trim);
+ if(shape==='peugeot'||shape==='peugeot206'){
+  // خانوادهٔ پژو: چراغ و جلوپنجرهٔ کلاسیک: چراغ‌های مستطیلی بزرگ‌تر و جلوپنجرهٔ باریکِ کلاسیک
+  for(const side of [-1,1]){
+   const h=mk(side*W*.34,.82,-L*.518,.42,.15,.055,lamp);h.rotation.y=side*.035;
+   mk(side*W*.34,.63,-L*.519,.29,.055,.045,trim);
+   mk(side*W*.36,.53,-L*.521,.24,.055,.03,orange);
+  }
+  mk(0,.70,-L*.535,.78,.09,.035,chrome);mk(0,.48,-L*.526,.62,.06,.03,trim);
+  for(const side of [-1,1])mk(side*W*.35,.57,L*.513,.26,.14,.045,tail);
+ }else if(shape==='pride'){
+  // پراید ۱۳۱: بدنهٔ فشرده، سپرهای مشکی و چراغ‌های سادهٔ چهارگوش
+  for(const side of [-1,1]){
+   mk(side*W*.345,.79,-L*.516,.30,.15,.05,lamp);
+   mk(side*W*.35,.57,L*.513,.24,.13,.045,tail);
+   mk(side*W*.35,.48,-L*.523,.18,.045,.035,orange);
+  }
+  mk(0,.73,-L*.526,.48,.075,.035,chrome);mk(0,.48,-L*.526,.58,.06,.035,trim);
+  mk(0,.57,L*.515,.72,.11,.04,trim);
+ }else{
+  // شاهین: چراغ کشیده، جلوپنجرهٔ پهن و جزئیات تیرهٔ سپر
+  for(const side of [-1,1]){
+   const h=mk(side*W*.335,.82,-L*.517,.48,.095,.055,lamp);h.rotation.z=-side*.10;
+   mk(side*W*.35,.62,-L*.526,.28,.075,.04,trim);
+   mk(side*W*.36,.53,-L*.522,.22,.045,.035,orange);
+   const t=mk(side*W*.35,.58,L*.514,.32,.13,.045,tail);t.rotation.z=side*.06;
+  }
+  mk(0,.71,-L*.535,.78,.22,.055,trim);mk(0,.70,-L*.567,.58,.055,.02,chrome);mk(0,.49,-L*.527,.84,.09,.04,trim);
+ }
+ // شیشه‌های جانبی و ستون‌های قاب؛ شیشه از هر دو سمت قابل‌دیدن است
+ const windowMat=new THREE.MeshPhysicalMaterial({color:0x183642,roughness:.12,metalness:.22,transparent:true,opacity:.88,side:THREE.DoubleSide});
+ for(const side of [-1,1]){
+  const sideGlass=new THREE.Mesh(new THREE.PlaneGeometry(sp.cabinW*.78,shape==='shahin'?.31:.29),windowMat);
+  sideGlass.position.set(side*(sp.cabinW*.502),1.28,(sp.frontTop+sp.backTop)/2);sideGlass.rotation.y=side*Math.PI/2;g.add(sideGlass);
+  if(shape!=='pride'){
+   const chromeStrip=mk(side*sp.cabinW*.51,1.455,(sp.frontTop+sp.backTop)/2, .022,.018,cabLength*.86,chrome);
+  }
+ }
+ // چهار چرخ جدا با لاستیک، رینگ و پره؛ چرخ‌ها هنگام رانندگی می‌چرخند
+ const wheelsLocal=[];
+ for(const side of [-1,1])for(const z of [-sp.wheelZ,sp.wheelZ]){
+  const w=new THREE.Group();w.position.set(side*(W*.49),sp.wheelR,z);
+  const tire=new THREE.Mesh(new THREE.CylinderGeometry(sp.wheelR,sp.wheelR,.22,24,1),materials.rubber);tire.rotation.z=Math.PI/2;w.add(tire);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(sp.wheelR*.58,sp.wheelR*.58,.235,18),chrome);rim.rotation.z=Math.PI/2;w.add(rim);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(sp.wheelR*.18,sp.wheelR*.18,.25,12),trim);hub.rotation.z=Math.PI/2;w.add(hub);
+  const spokeCount=shape==='shahin'?10:5;
+  for(let i=0;i<spokeCount;i++){
+   const a=i*Math.PI*2/spokeCount;
+   const sg=new THREE.Mesh(new THREE.BoxGeometry(.035,.026,sp.wheelR*.85),chrome);sg.position.set(0,0,0);sg.rotation.x=a;sg.position.y=Math.sin(a)*sp.wheelR*.29;sg.position.z=Math.cos(a)*sp.wheelR*.29;w.add(sg);
+  }
+  g.add(w);wheelsLocal.push(w);
+ }
+ // نشانه‌های سیلوئت و تزئینات اختصاصی هر مدل
+ if(shape==='pride'){
+  // پراید ۱۳۱: صندوق کوتاه‌تر و خط باریک دور چراغ عقب
+  mk(0,.79,L*.43,W*.77,.13,.16,highlight);
+  for(const side of [-1,1]){mk(side*W*.31,.67,L*.505,.18,.18,.045,tail);mk(side*W*.31,.51,-L*.51,.16,.055,.035,orange);}
+ }else if(shape==='peugeot'){
+  // پژو پارس: نوار کرومی کشیده و قاب چراغ‌های کلاسیک
+  mk(0,.70,-L*.535,.88,.045,.035,chrome);
+  for(const side of [-1,1])mk(side*W*.39,.58,L*.512,.20,.14,.045,tail);
+ }else{
+  // شاهین: جلوپنجرهٔ بزرگ‌تر، نوار کرومی و چراغ‌های باریک و کشیده
+  mk(0,.705,-L*.54,.92,.18,.05,trim);
+  mk(0,.704,-L*.572,.72,.035,.018,chrome);
+  for(const side of [-1,1]){const drl=mk(side*W*.35,.86,-L*.522,.48,.045,.04,chrome);drl.rotation.z=-side*.09;}
+ }
+ // پلاک‌ها و نشان اسم، بسته به مدل
+ const plateName=({peugeot:'PEUGEOT PARS',peugeot206:'PEUGEOT 206',shahin:'SAIPA SHAHIN',pride:'SAIPA PRIDE',tara:'IRAN KHODRO TARA',maserati:'MASERATI',i8:'BMW i8',alfa:'ALFA ROMEO'})[shape]||shape.toUpperCase();const plateMat=textTexture([plateName,'SIM LIFE'],'#f2f1e8','#191919',35);
+ const frontPlate=new THREE.Mesh(new THREE.PlaneGeometry(.60,.16),plateMat);frontPlate.position.set(0,.51,-L*.53);frontPlate.rotation.y=Math.PI;g.add(frontPlate);
+ const rearPlate=new THREE.Mesh(new THREE.PlaneGeometry(.60,.16),plateMat.clone());rearPlate.position.set(0,.51,L*.53);rearPlate.rotation.y=Math.PI;g.add(rearPlate);
+ // گروه جدا برای جایگزین‌کردن با مدل اختصاصی GLB؛ هندسهٔ متمایز بالا تا آن زمان باقی می‌ماند.
+ const visualRoot=new THREE.Group();visualRoot.name='procedural-'+shape;
+ const originalChildren=[...g.children];for(const child of originalChildren)visualRoot.add(child);
+ g.add(visualRoot);
+ g.userData={carId:id,carName:name,price,shape,wheels:wheelsLocal,bought:false,visualRoot,paintColor:color,detailedModel:false,usesExactAsset:false};
+ return g;
+}
+// انسان بافت‌دار/ریگ‌شده از منبع بیرونی بارگیری می‌شود؛ خودروها فقط از فایل اختصاصی همان مدل در assets/cars خوانده می‌شوند.
+const REALISTIC_PERSON_GLB='https://www.innerscene.com/api/library/brisk-walk-sam-3d-person-animated-bed03fa4/download';
+function newGLTFLoader(){return GLTFLoaderClass?new GLTFLoaderClass():null;}
+function cloneModelMaterials(root){
+ root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
+  if(Array.isArray(o.material))o.material=o.material.map(m=>m?.clone?.()||m);
+  else if(o.material)o.material=o.material.clone();
+ });
+ return root;
+}
+function centerOnGround(root){
+ root.updateMatrixWorld(true);let b=new THREE.Box3().setFromObject(root);if(b.isEmpty())return;
+ const center=b.getCenter(new THREE.Vector3());root.position.x-=center.x;root.position.z-=center.z;root.position.y-=b.min.y;root.updateMatrixWorld(true);
+}
+function fitDetailedCar(root,paintColor){
+ root.rotation.set(0,0,0);root.scale.set(1,1,1);root.position.set(0,0,0);root.updateMatrixWorld(true);
+ let b=new THREE.Box3().setFromObject(root);let size=b.getSize(new THREE.Vector3());
+ // خودرو باید محور طولی‌اش روی Z باشد و دماغه رو به جهت حرکت بازی (-Z) قرار بگیرد.
+ if(size.x>size.z)root.rotation.y=Math.PI/2;else root.rotation.y=Math.PI;
+ root.updateMatrixWorld(true);b.setFromObject(root);size=b.getSize(new THREE.Vector3());
+ const length=Math.max(size.x,size.z)||4;root.scale.setScalar(4.0/length);root.updateMatrixWorld(true);b.setFromObject(root);
+ root.position.x-=(b.min.x+b.max.x)/2;root.position.z-=(b.min.z+b.max.z)/2;root.position.y-=b.min.y;root.updateMatrixWorld(true);
+ const target=new THREE.Color(paintColor);root.traverse(o=>{
+  if(!o.isMesh)return;
+  const mats=Array.isArray(o.material)?o.material:[o.material];
+  for(const m of mats){if(!m||!m.color)continue;const c=m.color;const name=(m.name+' '+o.name).toLowerCase();
+   const likelyPaint=/paint|body|carbody|exterior|main.?color|karos/i.test(name)||(c.r>c.g*1.25&&c.r>c.b*1.18&&c.r>.25);
+   if(likelyPaint){m.color.copy(target);if('metalness'in m)m.metalness=Math.max(m.metalness||0,.18);if('roughness'in m)m.roughness=Math.min(m.roughness||.4,.32);}
+  }
+ });
+}
+function fitHumanoid(root){
+ root.rotation.set(0,Math.PI,0);root.scale.set(1,1,1);root.position.set(0,0,0);root.updateMatrixWorld(true);
+ let b=new THREE.Box3().setFromObject(root);if(b.isEmpty())return;
+ const h=b.max.y-b.min.y;root.scale.setScalar(1.78/(h||1.78));root.updateMatrixWorld(true);b.setFromObject(root);
+ root.position.x-=(b.min.x+b.max.x)/2;root.position.z-=(b.min.z+b.max.z)/2;root.position.y-=b.min.y;root.updateMatrixWorld(true);
+}
+function addRiggedWalker(actorRoot,sourceScene,animations,playOnMove){
+ const model=skeletonClone?skeletonClone(sourceScene):sourceScene.clone(true);
+ cloneModelMaterials(model);fitHumanoid(model);
+ // جایگزینی اجزای مدل قبلی، اما نگه‌داشتن خود گروه بازیکن برای تعاملات/سوارشدن.
+ actorRoot.clear();actorRoot.add(model);actorRoot.userData.humanRig=null;actorRoot.userData.externalHumanModel=true;
+ if(playOnMove&&animations?.length){
+  const mixer=new THREE.AnimationMixer(model);const clip=animations.find(c=>/walk|walkcycle|walking/i.test(c.name))||animations[0];
+  const action=mixer.clipAction(clip);action.enabled=true;action.setLoop(THREE.LoopRepeat,Infinity);action.clampWhenFinished=false;actorRoot.userData.walkAnimation={mixer,action,walking:false};
+ }
+ return model;
+}
+function applyExternalClothingColor(root,color){const target=new THREE.Color(color);root?.traverse?.(o=>{if(!o.isMesh)return;const arr=Array.isArray(o.material)?o.material:[o.material];for(const m of arr){if(!m)continue;const n=((m.name||'')+' '+(o.name||'')).toLowerCase();if(/shirt|cloth|clothing|torso|top|jacket|fabric|tee|hoodie/.test(n)&&m.color)m.color.copy(target);}});}
+function animateExternalHuman(actorRoot,dt,walking){
+ const a=actorRoot?.userData?.walkAnimation;if(!a)return;
+ if(walking!==a.walking){
+  a.walking=walking;
+  if(walking){a.action.reset();a.action.play();}
+  else{a.action.stop();a.action.reset();}
+ }
+ a.mixer.update(dt);
+}
+// مدل‌های اختصاصی باید جداگانه و با مجوز استفاده در بازی تهیه شوند و در مسیرهای زیر قرار گیرند.
+// وقتی فایل یک ماشین موجود باشد، فقط همان ماشین با GLB اختصاصی جایگزین می‌شود؛ مدل بقیه تغییر نمی‌کند.
+const EXACT_CAR_MODEL_PATHS={
+ peugeot:'./assets/cars/peugeot-pars.glb',
+ pride:'./assets/cars/pride-131.glb',
+ shahin:'./assets/cars/saipa-shahin.glb'
+};
+async function loadDedicatedCarAsset(loader,car){
+ const path=EXACT_CAR_MODEL_PATHS[car.userData.carId];if(!path)return false;
+ try{
+  const assetURL=new URL(path,document.baseURI).href;
+  // بررسی آرام وجود فایل اختیاری قبل از GLTFLoader، تا 404 بی‌دلیل در Console ایجاد نشود.
+  const check=await fetch(assetURL,{method:'HEAD',cache:'no-store'});
+  if(!check.ok){console.info('No dedicated model file for '+car.userData.carId+'; built-in model retained.');return false;}
+  const gltf=await loader.loadAsync(assetURL);
+  const model=cloneModelMaterials(gltf.scene);fitDetailedCar(model,car.userData.paintColor);
+  const visual=car.userData.visualRoot;if(!visual)return false;
+  visual.clear();visual.name='exact-model-'+car.userData.carId;visual.add(model);
+  car.userData.detailedModel=true;car.userData.usesExactAsset=true;car.userData.externalAnimations=gltf.animations||[];
+  const wheelMeshes=[];model.traverse(o=>{if(o.isMesh&&/(wheel|tire|tyre|rim|reifen|چرخ)/i.test(o.name))wheelMeshes.push(o);});
+  if(wheelMeshes.length)car.userData.wheels=wheelMeshes;
+  console.info('Dedicated vehicle model loaded:',car.userData.carId,path);return true;
+ }catch(err){
+  // فایل اختیاری نبود یا پیدا نشد؛ شکل اختصاصی ساخته‌شده در کد باقی می‌ماند.
+  console.info('Optional exact GLB not installed for '+car.userData.carId+'; using unique procedural model. Put it at '+path,err?.message||err);return false;
+ }
+}
+async function upgradeRealisticAssets(){
+ if(!GLTFLoaderClass||!scene)return;const loader=newGLTFLoader();
+ // هر ماشین مدل اختصاصی خودش را می‌گیرد؛ از این به بعد هرگز یک سدان عمومی روی همهٔ مدل‌ها کپی نمی‌شود.
+ realisticAssetsStatus='checking-dedicated-cars';
+ const carResults=await Promise.all(cars.map(car=>loadDedicatedCarAsset(loader,car)));
+ const loadedCount=carResults.filter(Boolean).length;
+ // بازیکن و حامد از مدل انسان بافت‌دار/ریگ‌شده استفاده می‌کنند؛ اگر CDN قطع باشد مدل داخلی باقی می‌ماند.
+ try{
+  realisticAssetsStatus='loading-person';
+  const humanGLTF=await loader.loadAsync(REALISTIC_PERSON_GLB);
+  if(person){const pm=addRiggedWalker(person,humanGLTF.scene,humanGLTF.animations,true);applyExternalClothingColor(pm,shirtColor);}
+  if(hamed&&hamedBody){
+   hamed.remove(hamedBody);hamedBody=addRiggedWalker(hamed,humanGLTF.scene,[],false);
+   const name=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture(['حامد فروشنده','خریدار گندم'],'#315c35','#ffffff',46).map,transparent:true}));name.scale.set(4.6,1.15,1);name.position.set(0,2.12,0);hamed.add(name);
+  }
+  realisticAssetsStatus=loadedCount===cars.length?'ready-exact-vehicles':'ready-human-with-vehicle-fallbacks';
+  console.info('Optional character model loading finished; using available built-in vehicle models where dedicated files are not installed.');
+ }catch(err){
+  realisticAssetsStatus='person-fallback';console.warn('Detailed animated human unavailable; built-in human remains.',err);
+  console.info('Optional detailed character model unavailable; built-in character remains.');
+ }
+}
+function makeCarDealership(){
+ // نمایشگاه سُه
+ dealerSpots.sooh={x:12,z:-447};const b=new THREE.Group();b.position.set(12,0,-447);
+ box(b,0,2.0,0,15,4,7,materials.house);box(b,0,4.1,0,15.7,.25,7.7,materials.roof);
+ box(b,0,1.85,3.58,8,3.1,.12,materials.glass);
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(12,1.6),textTexture(['نمایشگاه ماشین روستا','پژو ۲۵ میلیون | پراید ۵۵ میلیون | شاهین ۱۶۰ میلیون'],'#173a31','#ffe38b',32));sign.position.set(0,3.55,3.72);b.add(sign);scene.add(b);
+ registerSolid(12,-447,7.5,3.5,'sooh-dealership');const p=makeCar('peugeot','پژو پارس',25000000,0xf0eee8,'peugeot');p.position.set(5,0,-437);p.userData.region='sooh';scene.add(p);cars.push(p);
+ const r=makeCar('pride','پراید',55000000,0xd6d4cb,'pride');r.position.set(15,0,-437);r.userData.region='sooh';scene.add(r);cars.push(r);
+ const sh=makeCar('shahin','شاهین',160000000,0x1766a1,'shahin');sh.position.set(25,0,-437);sh.userData.region='sooh';scene.add(sh);cars.push(sh);
+}
+function nearestBike(pos){if(!motorbike)return null;return {bike:motorbike,distance:pos.distanceTo(motorbike.position)};}
+function wireDealerButtons(){const grid=$('dealerPanel').querySelector('.dealer-grid');if(!grid)return;grid.querySelectorAll('button').forEach(btn=>{const id=btn.dataset.buyCar||({buyPeugeot:'peugeot',buyPride:'pride',buyShahin:'shahin'}[btn.id]);if(id)btn.onclick=()=>buyCar(id);});}
+function renderDealerRegion(region){if(dealerRegionShown===region)return;dealerRegionShown=region;const panel=$('dealerPanel'),grid=panel.querySelector('.dealer-grid'),title=panel.querySelector('.dealer-head h3'),note=panel.querySelector('.dealer-note');if(region==='sooh'){title.textContent=soohDealerTitle||'نمایشگاه ماشین روستا';grid.innerHTML=soohDealerGridHTML;note.textContent=soohDealerNote||'برای خرید باید پول کافی داشته باشی.';}else{const isQ=region==='qazvin';title.textContent=isQ?'🚘 نمایشگاه ماشین قزوین':'🚘 نمایشگاه ماشین طالقان';note.textContent=isQ?'قیمت‌های فروشگاه قزوین: تارا، مازراتی و BMW i8.':'قیمت‌های فروشگاه طالقان: آلفا رومئو و پژو ۲۰۶.';const list=cars.filter(c=>c.userData.region===region);grid.innerHTML=list.map(c=>`<div class="car-card"><div class="car-photo" style="display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(140deg,#344b42,#9aab9c);color:#fff">🚘 ${c.userData.carName}</div><div class="car-name">🚘 ${c.userData.carName}</div><div class="car-price">${number(c.userData.price)} تومان</div><button type="button" data-buy-car="${c.userData.carId}">خرید ${c.userData.carName}</button></div>`).join('');}wireDealerButtons();updateHUD();}
+function detectNearbyDealer(pos){let region=null,dist=Infinity;for(const [key,spot] of Object.entries(dealerSpots)){const d=Math.hypot(pos.x-spot.x,pos.z-spot.z);if(d<dist){dist=d;region=key;}}return region&&dist<30?{region,distance:dist}:null;}
+function buyCar(id){const c=cars.find(v=>v.userData.carId===id);if(!c)return;if(ownedCars.includes(id)){tell('این ماشین رو قبلاً خریدی؛ نزدیکش برو و R بزن.');return;}if(money<c.userData.price){tell(`برای خرید ${c.userData.carName} باید ${number(c.userData.price)} تومان داشته باشی. پول فعلی: ${number(money)} تومان.`);return;}money-=c.userData.price;ownedCars.push(id);c.userData.bought=true;updateHUD();saveGame();tell(`تبریک! ${c.userData.carName} رو خریدی. حالا کنار ماشین برو و R بزن تا سوار بشی.`);}
+function nearestCar(pos){let best=null,distance=Infinity;for(const c of cars){const d=pos.distanceTo(c.position);if(d<distance){distance=d;best=c;}}return best?{car:best,distance}:null;}
+function getDrivenVehicle(){return mode==='carDriver'?activeCar:tractor;}
+function isVehicleMode(){return mode==='driver'||mode==='passenger'||mode==='carDriver'||mode==='bikeDriver';}
+function enterCar(car){if(!car||!ownedCars.includes(car.userData.carId)){tell('نمی‌شه، اول باید این ماشین رو از نمایشگاه بخری!');return;}if(mode!=='foot')return;if(person.parent)person.parent.remove(person);car.add(person);person.scale.setScalar(.53);person.position.set(-.39,.61,.16);person.rotation.set(0,0,0);person.visible=true;$('crosshair').style.display='none';activeCar=car;activeBike=null;mode='carDriver';speed=0;cockpit=false;updateHUD();tell(`سوار ${car.userData.carName} شدی! W گاز، S دنده‌عقب، A/D فرمان، ماوس دوربین، Q پیاده‌شدن.`);}
+function findSafeExitPosition(vehicle,baseDistance=2.4){const a=vehicle.rotation.y,right=vec(Math.cos(a),0,-Math.sin(a)),forward=vec(-Math.sin(a),0,-Math.cos(a));const dirs=[right,right.clone().negate(),forward,forward.clone().negate()];let best=null,bestScore=Infinity;for(const dist of [baseDistance,baseDistance+1,baseDistance+2,baseDistance+3])for(const d of dirs){const p=vehicle.position.clone().addScaledVector(d,dist);const score=solidOverlapScore(p.x,p.z,.38);if(score<.001)return p;if(score<bestScore){best=p;bestScore=score;}}return best||vehicle.position.clone().addScaledVector(right,baseDistance+3);}
+function exitCar(){if(mode!=='carDriver'||!activeCar)return;const car=activeCar,exitPos=findSafeExitPosition(car,2.3);car.remove(person);scene.add(person);person.scale.setScalar(1);person.position.copy(exitPos);person.position.y=0;yaw=car.rotation.y;person.rotation.y=yaw;person.visible=true;$('crosshair').style.display=firstPerson?'block':'none';mode='foot';speed=0;steer=0;activeCar=null;activeBike=null;updateHUD();saveGame();tell('از ماشین پیاده شدی.');}
+
+function makePerson(){const lighter=shadeHex(shirtColor,.48);person=humanModel(scene,makeFabricTexture(shirtColor,lighter,'shirt'));person.position.set(2,0,1);}
+function keyName(e){const map={KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',KeyE:'e',KeyR:'r',KeyP:'p',KeyQ:'q',KeyC:'c',KeyV:'v',KeyF:'f',KeyG:'g',KeyT:'t',ShiftLeft:'shift',ShiftRight:'shift',Escape:'escape',Space:' '};return map[e.code]||e.key.toLowerCase();}
+function clearKeys(){for(const k in keys)delete keys[k];}
+function actorPosition(){return mode==='foot'?person.position:mode==='carDriver'&&activeCar?activeCar.position:mode==='bikeDriver'&&activeBike?activeBike.position:tractor.position;}
+function nearHamed(){const limit=mode==='foot'?6:13;return actorPosition().distanceTo(hamed.position)<limit;}
+function enterSeat(seat){if(mode==='carDriver')return;if(mode==='foot'){if(person.parent)person.parent.remove(person);tractor.add(person);person.scale.setScalar(.72);mode=seat;speed=0;}else{mode=seat;}person.visible=true;person.position.set(seat==='driver'?-0.38:0.38,1.31,.48);person.rotation.set(0,0,0);updateHUD();tell(seat==='driver'?'پشت فرمان تراکتور نشستی؛ W گاز، S دنده‌عقب، A/D فرمان.':'روی صندلی شاگردی. برای رفتن پشت فرمان R رو بزن.');}
+function exitTractor(){if(mode==='carDriver'){exitCar();return;}if(mode==='bikeDriver'){exitBike();return;}if(mode==='foot')return;const exitPos=findSafeExitPosition(tractor,2.5);tractor.remove(person);scene.add(person);person.scale.setScalar(1);person.position.copy(exitPos);person.position.y=0;yaw=tractor.rotation.y;person.rotation.y=yaw;person.visible=true;$('crosshair').style.display=firstPerson?'block':'none';mode='foot';speed=0;steer=0;updateHUD();saveGame();tell('از تراکتور پیاده شدی.');}
+function enterBike(){if(!motorbike||mode!=='foot')return;if(person.parent)person.parent.remove(person);motorbike.add(person);person.scale.setScalar(.48);person.position.set(0,.48,.04);person.rotation.set(0,0,0);person.visible=true;$('crosshair').style.display='none';const rig=person.userData.humanRig;if(rig){if(rig.leftLeg)rig.leftLeg.rotation.x=1.05;if(rig.rightLeg)rig.rightLeg.rotation.x=1.05;if(rig.leftKnee)rig.leftKnee.rotation.x=-1.0;if(rig.rightKnee)rig.rightKnee.rotation.x=-1.0;if(rig.leftArm)rig.leftArm.rotation.x=.82;if(rig.rightArm)rig.rightArm.rotation.x=.82;if(rig.leftElbow)rig.leftElbow.rotation.x=.42;if(rig.rightElbow)rig.rightElbow.rotation.x=.42;}activeBike=motorbike;activeCar=null;mode='bikeDriver';speed=0;cockpit=false;updateHUD();tell('سوار موتور شدی! W گاز، S ترمز/عقب، A/D فرمان و Q پیاده‌شدن.');}
+function exitBike(){if(mode!=='bikeDriver'||!activeBike)return;const bike=activeBike,exitPos=findSafeExitPosition(bike,1.8);bike.remove(person);scene.add(person);person.scale.setScalar(1);person.position.copy(exitPos);person.position.y=0;yaw=bike.rotation.y;person.rotation.y=yaw;person.visible=true;$('crosshair').style.display=firstPerson?'block':'none';const rig=person.userData.humanRig;if(rig){for(const k of ['leftLeg','rightLeg','leftKnee','rightKnee','leftArm','rightArm','leftElbow','rightElbow'])if(rig[k])rig[k].rotation.set(0,0,0);}activeBike=null;mode='foot';speed=0;steer=0;updateHUD();saveGame();tell('از موتور پیاده شدی.');}
+function bindMobileControls(){
+ const root=$('mobileControls');if(!root)return;
+ root.querySelectorAll('[data-hold]').forEach(btn=>{
+  const k=btn.dataset.hold;
+  const down=e=>{e.preventDefault();e.stopPropagation();keys[k]=true;btn.classList.add('active');try{btn.setPointerCapture(e.pointerId);}catch(err){}};
+  const up=e=>{e.preventDefault();e.stopPropagation();keys[k]=false;btn.classList.remove('active');};
+  btn.addEventListener('pointerdown',down);['pointerup','pointercancel','lostpointercapture'].forEach(name=>btn.addEventListener(name,up));
+ });
+ root.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();if(!started)return;handleAction(btn.dataset.action);
+  btn.classList.add('active');setTimeout(()=>btn.classList.remove('active'),130);
+ }));
+}
+function onDown(e){
+ const k=keyName(e);if(['w','a','s','d',' '].includes(k))e.preventDefault();
+ if(!started)return;
+ // گفت‌وگو یک پنجرهٔ modal است: کلید حرکت نباید پشت آن شخصیت را به حرکت دربیاورد.
+ if($('dialogPanel')?.style.display==='block'&&k!=='escape'){if(k==='enter')closeDialog();return;}
+ if(keys[k])return;keys[k]=true;
+ if(k==='shift'){shiftLock=!shiftLock;if(shiftLock)renderer.domElement.requestPointerLock?.();else document.exitPointerLock?.();return;}
+ handleAction(k);
+}
+function handleAction(k){
+ if(!started)return;
+ if(k==='e')harvestOne();
+ if(k==='r'){
+  if(mode==='foot'){
+   const nc=nearestCar(person.position),nb=nearestBike(person.position);
+   if(nb&&nb.distance<4.7&&(!nc||nb.distance<nc.distance))enterBike();
+   else if(nc&&nc.distance<4.7){if(!ownedCars.includes(nc.car.userData.carId))tell(`نمی‌شه! اول باید ${nc.car.userData.carName} رو از نمایشگاه بخری.`);else enterCar(nc.car);}
+   else if(person.position.distanceTo(tractor.position)<7)enterSeat('driver');else tell('برای سوارشدن، کنار تراکتور، موتور یا ماشین خریداری‌شده برو.');
+  }else if(mode==='passenger')enterSeat('driver');
+ }
+ if(k==='p'){if(mode==='foot'){if(person.position.distanceTo(tractor.position)<7)enterSeat('passenger');else tell('صندلی شاگرد مربوط به تراکتوره؛ به تراکتور نزدیک شو.');}else if(mode==='driver')enterSeat('passenger');}
+ if(k==='q'&&mode!=='foot')exitTractor();
+ if(k==='c'&&mode!=='foot'){cockpit=!cockpit;updateHUD();tell(cockpit?'دوربین داخل کابین':'دوربین بیرون وسیله');}
+ if(k==='v'&&mode==='foot'){firstPerson=!firstPerson;$('crosshair').style.display=firstPerson?'block':'none';updateHUD();}
+ if(k==='f')sellNormal();if(k==='g')sellToHamed();if(k==='t')talkToNearestNPC();
+ if(k==='escape'){shiftLock=false;document.exitPointerLock?.();closeDialog();}
+}
+function hidePlant(f,p){const zero=new THREE.Matrix4().makeScale(0,0,0);f.userData.stemMesh.setMatrixAt(p.index,zero);f.userData.headMesh.setMatrixAt(p.index,zero);f.userData.stemMesh.instanceMatrix.needsUpdate=true;f.userData.headMesh.instanceMatrix.needsUpdate=true;p.harvested=true;p.regrow=Date.now()+8000;regrowQueue.push({f,p});}
+function showPlant(f,p){f.userData.stemMesh.setMatrixAt(p.index,p.stemMatrix);f.userData.headMesh.setMatrixAt(p.index,p.headMatrix);f.userData.stemMesh.instanceMatrix.needsUpdate=true;f.userData.headMesh.instanceMatrix.needsUpdate=true;p.harvested=false;p.regrow=0;}
+function harvestOne(){if(mode==='passenger'){tell('برای برداشت پیاده شو یا پشت فرمان برو.');return;}const pos=actorPosition();let best=null,bestF=null,bestD=Infinity;for(const f of fields){for(const p of f.userData.plants){if(p.harvested)continue;const dx=f.position.x+p.x-pos.x,dz=f.position.z+p.z-pos.z;const d=dx*dx+dz*dz;if(d<bestD){bestD=d;best=p;bestF=f;}}}const range=mode==='driver'?3.8:2.7;if(!best||bestD>range*range){tell('کنار بوته‌های گندم برو؛ هر بار E فقط ۱ دانه می‌چیند.');return;}hidePlant(bestF,best);wheat+=1;updateHUD();saveGame();tell('🌾 یک دانه گندم برداشتی! گندم دوباره رشد می‌کند.');}
+function updateRegrowth(){const now=Date.now();for(let i=regrowQueue.length-1;i>=0;i--){const item=regrowQueue[i];if(item.p.regrow<=now){showPlant(item.f,item.p);regrowQueue.splice(i,1);}}}
+function getRegionAt(pos){const dS=Math.hypot(pos.x-CITY.sooh.x,pos.z-CITY.sooh.z),dQ=Math.hypot(pos.x-CITY.qazvin.x,pos.z-CITY.qazvin.z),dT=Math.hypot(pos.x-CITY.taleghan.x,pos.z-CITY.taleghan.z);if(dQ<250&&dQ<=dT)return 'qazvin';if(dT<250)return 'taleghan';return 'sooh';}
+function getNormalWheatPrice(pos=actorPosition()){const region=getRegionAt(pos);return region==='qazvin'?10000:region==='taleghan'?15000:5000;}
+function nearestSpecialSeller(pos=actorPosition()){let best=null,bd=Infinity;for(const seller of specialSellers){const d=pos.distanceTo(seller.position);if(d<bd){best=seller;bd=d;}}return best&&bd<(mode==='foot'?8:13)?{seller:best,distance:bd}:null;}
+function sellNormal(){if(wheat<=0){tell('گندمی برای فروش نداری. با E دانه جمع کن.');return;}const sold=wheat,unit=getNormalWheatPrice(),earned=sold*unit;money+=earned;wheat=0;updateHUD();saveGame();tell(`فروش عادی در ${getRegionLabel(getRegionAt(actorPosition()))}: ${number(sold)} دانه × ${number(unit)} = ${number(earned)} تومان`);}
+function sellToHamed(){const nearby=nearestSpecialSeller();if(!nearby){tell('برای فروش ویژه نزدیک حامد فروشنده در سُه، جواد فروشنده در قزوین یا حشمت خطر در طالقان برو.');return;}if(wheat<=0){tell(`${nearby.seller.userData.npcName} می‌گه: اول گندم جمع کن، بعد بیا معامله کنیم!`);return;}const sold=wheat,unit=nearby.seller.userData.specialPrice||10000,earned=sold*unit;money+=earned;wheat=0;updateHUD();saveGame();tell(`${nearby.seller.userData.npcName} گندمت رو خرید: ${number(sold)} × ${number(unit)} = ${number(earned)} تومان!`);}
+function buyLand(){if(ownsLand){tell('زمین رو قبلاً خریدی.');return;}if(money<300000){tell('برای خرید زمین ۳۰۰٬۰۰۰ تومان لازم داری.');return;}money-=300000;ownsLand=true;showOwnedLand(true);updateHUD();saveGame();tell('تبریک! زمین خالی رو به قیمت ۳۰۰٬۰۰۰ تومان خریدی.');}
+function buyHouse(){if(ownsHouse){tell('این خانه رو قبلاً خریدی.');return;}if(money<300000){tell('برای خرید خانهٔ خالی ۳۰۰٬۰۰۰ تومان لازم داری.');return;}money-=300000;ownsHouse=true;if(houseProperty&&houseProperty.children.length){const sign=houseProperty.children[houseProperty.children.length-1];if(sign.material?.map)sign.material=textTexture(['خانه متعلق به شماست','خرید انجام شد'],'#234a2f','#fff5d5',42);}updateHUD();saveGame();tell('تبریک! خانهٔ خالی رو به قیمت ۳۰۰٬۰۰۰ تومان خریدی.');}
+function update(dt){if(!started)return;
+ if(hamedBody)animateHuman(hamedBody,dt,false);
+ if(mode==='foot'){
+  const turn=((keys.a?1:0)-(keys.d?1:0))*2.35*dt;yaw+=turn;person.rotation.y=yaw;
+  const forward=(keys.w?1:0)-(keys.s?1:0);if(forward){const dir=vec(-Math.sin(yaw),0,-Math.cos(yaw));moveGroundObject(person,dir.x*5.2*dt*forward,dir.z*5.2*dt*forward,.38);}
+  animateHuman(person,dt,forward!==0);person.position.y=0;person.position.x=THREE.MathUtils.clamp(person.position.x,-1150,1150);person.position.z=THREE.MathUtils.clamp(person.position.z,-3800,80);
+  if(firstPerson){camera.position.copy(person.position).add(vec(0,1.68,0));camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0;}
+  else{const dist=shiftLock?3.1:6.5,height=shiftLock?2.1:3.2;const target=person.position.clone().add(vec(Math.sin(yaw)*dist,height+Math.sin(-pitch)*dist*.35,Math.cos(yaw)*dist));camera.position.lerp(target,Math.min(1,dt*9));camera.lookAt(person.position.clone().add(vec(0,1.25,0)));}
+ }else if(mode==='driver'||mode==='carDriver'||mode==='bikeDriver'){
+  const vehicle=mode==='carDriver'&&activeCar?activeCar:mode==='bikeDriver'&&activeBike?activeBike:tractor;
+  const isBike=mode==='bikeDriver';
+  // سرعت‌ها بر اساس متغیر داخلی بازی‌اند: تراکتور حداکثر ۲۵۰ کیلومتر/ساعت نشان می‌دهد؛ ماشین و موتور سریع‌ترند.
+  // تراکتور عمداً نرم‌تر و کم‌سرعت‌تر از نسخهٔ قبلی است؛ نمایشگر همچنان سقف ۲۵۰ کیلومتر/ساعت دارد.
+  const forwardLimit=isBike?96:mode==='carDriver'?112:34;
+  const reverseLimit=isBike?-24:mode==='carDriver'?-30:-7;
+  const target=keys.w?forwardLimit:keys.s?reverseLimit:0;
+  const accelerationRate=mode==='driver'?1.15:(keys.w||keys.s?1.65:2.9);
+  speed=THREE.MathUtils.damp(speed,target,accelerationRate,dt);
+  speed=THREE.MathUtils.clamp(speed,reverseLimit,forwardLimit);
+  const turning=(keys.a?1:0)-(keys.d?1:0);steer=THREE.MathUtils.damp(steer,turning,isMobileDevice?10:5.5,dt);
+  const maxYawRate=isBike?(isMobileDevice?2.45:1.75):mode==='carDriver'?(isMobileDevice?2.65:1.9):(isMobileDevice?1.05:.68);
+  const speedRatio=Math.min(1,Math.abs(speed)/Math.max(1,forwardLimit));
+  if(Math.abs(speed)>.12)vehicle.rotation.y+=steer*Math.sign(speed)*maxYawRate*(.22+.78*speedRatio)*dt;
+  const dir=vec(-Math.sin(vehicle.rotation.y),0,-Math.cos(vehicle.rotation.y));const vehiclePad=isBike ? 0.9 : (mode==='carDriver' ? 2.35 : 1.8);moveGroundObject(vehicle,dir.x*speed*dt,dir.z*speed*dt,vehiclePad);vehicle.position.y=0;vehicle.position.x=THREE.MathUtils.clamp(vehicle.position.x,-1150,1150);vehicle.position.z=THREE.MathUtils.clamp(vehicle.position.z,-3800,80);
+  if(mode==='driver'){for(const w of wheels){w.g.rotation.x+=speed*dt*.8;if(w.isFront)w.g.rotation.y=steer*.25;}if(steeringWheel)steeringWheel.rotation.z=-steer*.6;}
+  else{for(const w of vehicle.userData.wheels||[])w.rotation.x+=speed*dt*.7;}
+  const heading=vehicle.rotation.y+vehicleLookYaw;
+  if(cockpit){const cp=vehicle.localToWorld(isBike?vec(0,1.45,.10):mode==='carDriver'?vec(-.28,1.55,.32):vec(-.38,2.45,.18));camera.position.copy(cp);camera.rotation.order='YXZ';camera.rotation.y=heading;camera.rotation.x=vehicleLookPitch;camera.rotation.z=0;}
+  else{const dist=isBike?5:mode==='carDriver'?6.5:7.8;const ht=isBike?2.2:mode==='carDriver'?2.6:3.4;const pos=vehicle.position.clone().add(vec(Math.sin(heading)*dist,ht+vehicleLookPitch*2,Math.cos(heading)*dist));camera.position.lerp(pos,Math.min(1,dt*5));camera.lookAt(vehicle.position.clone().add(vec(0,isBike?1.0:mode==='carDriver'?.9:1.35,0)));}
+ }else{
+  speed=0;const pos=tractor.position.clone().add(vec(Math.sin(tractor.rotation.y)*7.8,3.4,Math.cos(tractor.rotation.y)*7.8));camera.position.lerp(pos,Math.min(1,dt*5));camera.lookAt(tractor.position.clone().add(vec(0,1.35,0)));
+ }
+ animateExternalHuman(person,dt,mode==='foot'&&(!!keys.w||!!keys.s));updateRegrowth();const actor=actorPosition();
+ const tractorNear=mode==='foot'&&person.position.distanceTo(tractor.position)<6.8;
+ const fieldNear=fields.some(f=>{const p=actor;const q=f.worldToLocal(p.clone());return Math.abs(q.x)<f.userData.width/2+2&&Math.abs(q.z)<f.userData.length/2+2;});
+ const sellersNear=nearestSpecialSeller(actor);const nc=mode==='foot'?nearestCar(person.position):null;const nb=mode==='foot'?nearestBike(person.position):null;
+ const dealer=mode==='foot'?detectNearbyDealer(person.position):null;const shopNear=!!dealer&&!dealerClosed;
+ if(!dealer)dealerClosed=false;
+ if(shopNear){renderDealerRegion(dealer.region);$('dealerPanel').style.display='block';const dealerMessage=`موجودی: ${number(money)} تومان — برای خرید پول کافی لازم است.`;if($('dealerStatus').textContent!==dealerMessage)$('dealerStatus').textContent=dealerMessage;}
+ else{$('dealerPanel').style.display='none';if(dealerRegionShown!==null)dealerRegionShown=null;}
+ if(isMobileDevice)$('mobileControls').style.display=shopNear||$('dialogPanel').style.display==='block'?'none':'flex';
+ let prompt='';if(sellersNear)prompt=`🧑 ${sellersNear.seller.userData.npcName} نزدیکته — G فروش هر دانه به ${number(sellersNear.seller.userData.specialPrice)} تومان`;
+ else if(nb&&nb.distance<4.7&&mode==='foot')prompt='🏍️ موتور طالقان نزدیکته — R سوار شو؛ Q پیاده شو';
+ else if(nc&&nc.distance<4.7&&mode==='foot')prompt=ownedCars.includes(nc.car.userData.carId)?`🚘 ${nc.car.userData.carName} مال توست — R سوار شو`:`🔒 ${nc.car.userData.carName}: برای سوارشدن باید بخری.`;
+ else if(tractorNear)prompt='🚜 نزدیک تراکتور: R صندلی راننده · P صندلی شاگرد';else if(fieldNear)prompt='🌾 نزدیک گندم‌زار: هر بار E فقط یک دانه';else{const nn=nearestNPC(actor);if(nn&&nn.distance<5)prompt=`💬 ${nn.npc.userData.npcName} — T گفتگو`;}
+ $('interact').textContent=prompt;$('interact').style.display=prompt?'block':'none';const displaySpeed=(mode==='driver'||mode==='passenger')?Math.min(250,Math.abs(speed)*(250/34)):Math.abs(speed)*3.2;$('speed').textContent=number(displaySpeed);updateRemoteVisuals(dt);sendNetworkState(dt);
+ const p=actor;if(p.z>-425)$('distance').textContent='مزرعهٔ سُه';else if(p.z>=JUNCTION.z){const leftKm=Math.max(0,(p.z-JUNCTION.z)/ROAD_UNITS_PER_KM);const remain=140+leftKm;$('distance').textContent=`مسیر قزوین · ${number(remain)} کیلومتر مانده`;}
+ else if(p.x>=0){const d=(p.x-JUNCTION.x)*QAZVIN_ROUTE.ux+(p.z-JUNCTION.z)*QAZVIN_ROUTE.uz;const remain=Math.max(0,140-d/ROAD_UNITS_PER_KM);$('distance').textContent=remain<1?'قزوین':`مسیر قزوین · ${number(remain)} کیلومتر مانده`;}
+ else{const d=(p.x-JUNCTION.x)*TALEGHAN_ROUTE.ux+(p.z-JUNCTION.z)*TALEGHAN_ROUTE.uz;const remain=Math.max(0,230-d/ROAD_UNITS_PER_KM);$('distance').textContent=remain<1?'طالقان':`مسیر طالقان · ${number(remain)} کیلومتر مانده`;}
+ saveTimer+=dt;if(saveTimer>7){saveTimer=0;saveGame();}
+}
+function resize(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));}
+function animate(now){requestAnimationFrame(animate);const dt=Math.min(Math.max((now-last)/1000||0,0),.04);last=now;if(started){update(dt);renderer.render(scene,camera);}}
+async function startGame(){
+ if(started||startingGame)return;startingGame=true;$('play').disabled=true;
+ try{
+  THREE=await loadThree();init();started=true;$('start').style.display='none';document.body.classList.add('game-started');$('mobileControls').style.display=isMobileDevice?'flex':'none';
+  updateOnlineHud();
+  tell(multiplayerRole==='offline'?'به شبیه‌ساز زندگی خوش اومدی!':'به دنیای مشترک خوش اومدی!');
+  void loadGLTFSupport().then(ok=>{if(ok&&started)return upgradeRealisticAssets();}).catch(assetErr=>console.warn('مدل‌های افزونه در دسترس نیستند؛ مدل‌های داخلی باقی می‌مانند.',assetErr));
+ }catch(e){
+  console.error('Game start failed:',e);$('loadtext').textContent='بارگیری بازی ناموفق بود. اینترنت را بررسی کن و با Live Server یا لینک سایت اجرا کن. جزئیات در Console دیده می‌شود.';$('play').disabled=false;startingGame=false;
+ }
+}
+async function loadTrysteroStrategies(){
+ // سه مسیر مستقل برای پیدا کردن بازیکن‌ها؛ هر مسیر در صورت خرابی بقیه را متوقف نمی‌کند.
+ const sources=[
+  {name:'Nostr',url:'https://esm.run/trystero'},
+  {name:'MQTT',url:'https://esm.run/@trystero-p2p/mqtt'},
+  {name:'BitTorrent',url:'https://esm.run/@trystero-p2p/torrent'}
+ ];
+ const results=await Promise.allSettled(sources.map(async source=>{
+  const mod=await Promise.race([
+   import(source.url),
+   new Promise((_,reject)=>setTimeout(()=>reject(new Error('بارگیری بیش از حد طول کشید')),9000))
+  ]);
+  if(typeof mod.joinRoom!=='function')throw new Error('تابع joinRoom موجود نیست');
+  return {...source,mod};
+ }));
+ const loaded=[];
+ results.forEach((result,i)=>{
+  if(result.status==='fulfilled')loaded.push(result.value);
+  else console.warn('Multiplayer path unavailable:',sources[i].name,result.reason);
+ });
+ if(!loaded.length)throw new Error('هیچ مسیر ارتباطی عمومی بارگیری نشد. اینترنت یا دسترسی به CDN را بررسی کن.');
+ return loaded;
+}
+function cleanNickname(value){const s=String(value||'').replace(/[<>\u0000-\u001f]/g,'').trim().slice(0,20);return s||'بازیکن';}
+function uniqueOnlinePeerCount(){
+ const unique=new Set();
+ for(const [key,link] of peerConnections){unique.add(link?.sessionId||key);}
+ return unique.size;
+}
+function updateOnlineHud(){
+ const hud=$('onlineHud');if(!hud)return;
+ hud.style.display=multiplayerRole==='offline'?'none':'block';
+ $('roomIdLabel').textContent='دنیای عمومی · بدون کد';
+ const others=uniqueOnlinePeerCount(),count=1+others;
+ let status='آماده‌سازی اتصال…';
+ if(multiplayerRole==='mesh')status=others?`آنلاین · ${number(count)} بازیکن`:'در حال پیدا کردن بازیکن‌های دیگر…';
+ else if(multiplayerRole==='host')status=`میزبان دنیا · ${number(count)} بازیکن`;
+ else if(multiplayerRole==='guest'&&peerConnection?.open)status=`متصل · ${number(count)} بازیکن`;
+ else if(multiplayerRole==='guest')status='در حال ورود به دنیا…';
+ $('onlineStatus').textContent=status;
+}
+function setNetworkStartStatus(text){const e=$('networkStartStatus');if(e)e.textContent=text;}
+function spawnLocalAtCommonPoint(){
+ if(!person||!scene){pendingGlobalSpawn=true;return;}
+ if(joinedSharedWorld&&!pendingGlobalSpawn)return;
+ // همه به یک نقطهٔ شروع می‌آیند، با فاصلهٔ کم تا روی هم نیفتند.
+ if(person.parent!==scene){person.parent?.remove(person);scene.add(person);}
+ person.scale.setScalar(1);person.position.set((Math.random()-.5)*5,0,(Math.random()-.5)*5);person.rotation.y=0;person.visible=true;
+ mode='foot';speed=0;steer=0;yaw=0;activeCar=null;activeBike=null;pendingGlobalSpawn=false;joinedSharedWorld=true;
+ updateHUD();
+}
+function cleanupNetworkObjects(){
+ const rooms=[...trysteroTransports];trysteroTransports=[];trysteroRoom=null;trysteroPacketAction=null;
+ for(const transport of rooms){try{const result=transport.room?.leave?.();if(result&&typeof result.catch==='function')result.catch(()=>{});}catch(e){console.warn('Online room leave:',e);}}
+ peerConnections.clear();peerConnection=null;peerInstance=null;
+ for(const id of [...remotePlayers.keys()])removeRemotePlayer(id);
+ latestPlayerStates.clear();
+}
+function showOnlineProblem(){
+ globalJoinInProgress=false;
+ setNetworkStartStatus('اتصال آنلاین کامل نشد؛ بازی محلی باز می‌ماند. ممکن است کتابخانه یا رله‌های عمومی از این اینترنت در دسترس نباشند.');
+ if(started)tell('اتصال آنلاین آماده نشد؛ بازی محلی ادامه دارد.');
+}
+function sendOwnWorldState(targetPeerId='',actionOverride=null){
+ if(multiplayerRole==='offline')return;
+ const state=normalizePlayerState(localNetworkState().payload);if(!state)return;
+ const packet={type:'player-state',sessionId:CLIENT_SESSION_ID,payload:state};
+ const actions=actionOverride?[actionOverride]:trysteroTransports.map(t=>t.action).filter(Boolean);
+ for(const action of actions){try{
+  const sent=targetPeerId?action.send(packet,{target:targetPeerId}):action.send(packet);
+  if(sent&&typeof sent.catch==='function')sent.catch(err=>console.warn('World state send failed:',err));
+ }catch(err){console.warn('World state send failed:',err);}}
+}
+async function joinGlobalWorld(){
+ if(globalJoinInProgress||trysteroRoom)return;
+ globalJoinInProgress=true;manualDisconnect=false;
+ localPlayerName=cleanNickname($('playerNameInput')?.value||localPlayerName);
+ setNetworkStartStatus('در حال راه‌اندازی چند مسیر اتصال آنلاین…');
+ try{
+  const strategies=await loadTrysteroStrategies();
+  if(manualDisconnect){globalJoinInProgress=false;return;}
+  let joined=0;
+  for(const spec of strategies){
+   try{
+    const room=spec.mod.joinRoom(
+     {appId:GLOBAL_APP_ID},
+     GLOBAL_WORLD_ID,
+     {onJoinError:({peerId,error})=>{
+      console.warn(`World peer connection error (${spec.name}):`,peerId,error);
+      setNetworkStartStatus('یک مسیر اتصال مشکل دارد؛ مسیرهای دیگر همچنان فعال می‌مانند.');
+     }}
+    );
+    const action=room.makeAction('sohan-life-player-state-v2');
+    const transport={name:spec.name,room,action,mod:spec.mod};
+    trysteroTransports.push(transport);joined++;
+    if(!trysteroRoom){trysteroRoom=room;trysteroPacketAction=action;myPeerId=CLIENT_SESSION_ID;}
+    action.onMessage=(packet,meta)=>{
+     const peerId=meta?.peerId;
+     if(!peerId||!packet||typeof packet!=='object')return;
+     const linkKey=`${transport.name}:${peerId}`;
+     if(packet.sessionId===CLIENT_SESSION_ID)return;
+     if(packet.type==='hello'){
+      const link=peerConnections.get(linkKey)||{open:true,transport:transport.name,peerId,sessionId:''};
+      link.sessionId=typeof packet.sessionId==='string'?packet.sessionId:'';peerConnections.set(linkKey,link);
+      sendOwnWorldState(peerId,action);updateOnlineHud();return;
+     }
+     if(packet.type==='player-state'){
+      const sessionId=typeof packet.sessionId==='string'&&packet.sessionId?packet.sessionId:linkKey;
+      if(sessionId===CLIENT_SESSION_ID)return;
+      const link=peerConnections.get(linkKey)||{open:true,transport:transport.name,peerId,sessionId};
+      link.sessionId=sessionId;peerConnections.set(linkKey,link);
+      const state=normalizePlayerState(packet.payload);if(!state)return;
+      latestPlayerStates.set(sessionId,state);upsertRemotePlayer(sessionId,state);updateOnlineHud();
+     }
+    };
+    room.onPeerJoin=peerId=>{
+     if(!peerId)return;
+     const linkKey=`${transport.name}:${peerId}`;
+     if(!peerConnections.has(linkKey))peerConnections.set(linkKey,{open:true,transport:transport.name,peerId,sessionId:''});
+     try{action.send({type:'hello',sessionId:CLIENT_SESSION_ID},{target:peerId});}catch(err){console.warn('Hello message failed:',err);}
+     sendOwnWorldState(peerId,action);updateOnlineHud();
+     setNetworkStartStatus(`یک بازیکن پیدا شد؛ در حال همگام‌سازی دنیا (${transport.name}).`);
+    };
+    room.onPeerLeave=peerId=>{
+     const linkKey=`${transport.name}:${peerId}`,link=peerConnections.get(linkKey),sessionId=link?.sessionId;
+     peerConnections.delete(linkKey);
+     if(sessionId&&!Array.from(peerConnections.values()).some(item=>item.sessionId===sessionId)){
+      latestPlayerStates.delete(sessionId);removeRemotePlayer(sessionId);
+     }
+     updateOnlineHud();
+     if(uniqueOnlinePeerCount()===0)setNetworkStartStatus('اتصال آماده است؛ منتظر بازیکن‌های دیگر می‌مانیم…');
+    };
+   }catch(err){console.warn(`Could not join ${spec.name} signaling path:`,err);}
+  }
+  if(!joined)throw new Error('هیچ مسیر ارتباطی قابل استفاده نیست.');
+  multiplayerRole='mesh';peerConnection={open:true};globalJoinInProgress=false;
+  spawnLocalAtCommonPoint();updateOnlineHud();
+  const names=trysteroTransports.map(t=>t.name).join('، ');
+  setNetworkStartStatus(`دنیای عمومی آماده است؛ مسیرهای فعال: ${names}. منتظر بازیکن‌های دیگر…`);
+  if(!started)void startGame();
+ }catch(err){
+  console.warn('Global world setup failed:',err);globalJoinInProgress=false;multiplayerRole='offline';
+  cleanupNetworkObjects();showOnlineProblem();
+ }
+}
+function normalizePlayerState(d){
+ if(!d||typeof d!=='object')return null;
+ const finite=(v,min,max)=>Number.isFinite(v)&&v>=min&&v<=max;
+ if(!finite(d.x,-1200,1200)||!finite(d.z,-3900,120)||!finite(d.yaw,-100,100))return null;
+ const modes=['foot','driver','passenger','carDriver','bikeDriver'];if(!modes.includes(d.mode))return null;
+ const vehicleType=['foot','tractor','car','bike'].includes(d.vehicleType)?d.vehicleType:'foot';
+ const color=typeof d.shirtColor==='string'&&/^#[0-9a-f]{6}$/i.test(d.shirtColor)?d.shirtColor:'#c55a45';
+ return {x:d.x,z:d.z,yaw:d.yaw,mode:d.mode,vehicleType,vehicleId:typeof d.vehicleId==='string'&&VALID_CAR_IDS.includes(d.vehicleId)?d.vehicleId:'',shirtColor:color,moving:!!d.moving,name:cleanNickname(d.name||'بازیکن'),receivedAt:Date.now()};
+}
+function broadcastFromHost(packet,exceptId=''){
+ if(!trysteroPacketAction)return;
+ try{const sent=trysteroPacketAction.send(packet);if(sent&&typeof sent.catch==='function')sent.catch(err=>console.warn('World broadcast skipped',err));}catch(err){console.warn('World broadcast skipped',err);}
+}
+function scheduleGlobalRetry(){
+ if(manualDisconnect||reconnectTimer)return;
+ setNetworkStartStatus('اتصال قطع شد؛ دوباره خودکار تلاش می‌کنیم…');
+ reconnectTimer=setTimeout(()=>{
+  reconnectTimer=0;if(manualDisconnect)return;
+  cleanupNetworkObjects();multiplayerRole='offline';globalJoinInProgress=false;joinedSharedWorld=false;
+  void joinGlobalWorld();
+ },4000);
+}
+function upsertRemotePlayer(id,state){
+ if(!id||id===myPeerId)return;
+ const safe=normalizePlayerState(state);if(!safe)return;
+ let player=remotePlayers.get(id);
+ if(!player){player={id,state:safe,avatar:null,nameTag:null,vehicleRoot:null,vehicleKey:'',visualMode:'',tagText:'',color:safe.shirtColor};remotePlayers.set(id,player);}
+ const colorChanged=player.color!==safe.shirtColor;player.state=safe;
+ if(colorChanged&&player.avatar)rebuildRemotePlayerAvatar(player,safe.shirtColor);
+ if(!player.avatar&&scene&&THREE)createRemotePlayerVisual(player);
+ if(player.nameTag&&player.tagText!==safe.name)refreshRemotePlayerNameTag(player,safe.name);
+ ensureRemotePlayerVehicle(player);
+}
+function createRemotePlayerVisual(player){
+ if(!scene||!THREE||player.avatar)return;
+ const color=player.state?.shirtColor||'#c55a45';player.color=color;
+ player.avatar=humanModel(scene,makeFabricTexture(color,shadeHex(color,.48),'shirt'));player.avatar.userData.remoteColor=color;
+ player.nameTag=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture([player.state?.name||'بازیکن آنلاین','دنیای مشترک'],'#214a35','#fff4cd',40).map,transparent:true,depthTest:false}));
+ player.nameTag.scale.set(3.8,.95,1);player.nameTag.position.set(0,2.5,0);player.avatar.add(player.nameTag);player.tagText=player.state?.name||'بازیکن آنلاین';
+}
+function refreshRemotePlayerNameTag(player,name){
+ if(!player.nameTag||name===player.tagText)return;player.tagText=name;const old=player.nameTag.material?.map;
+ player.nameTag.material.map=textTexture([name,'دنیای مشترک'],'#214a35','#fff4cd',40).map;player.nameTag.material.needsUpdate=true;if(old)old.dispose();
+}
+function rebuildRemotePlayerAvatar(player,color){
+ if(!scene)return;const old=player.avatar,oldParent=old?.parent,oldPos=old?.position.clone(),oldRot=old?.rotation.y||0;
+ if(oldParent)oldParent.remove(old);if(old&&scene)scene.remove(old);
+ player.avatar=humanModel(scene,makeFabricTexture(color,shadeHex(color,.48),'shirt'));player.avatar.userData.remoteColor=color;
+ player.nameTag=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture([player.state?.name||'بازیکن آنلاین','دنیای مشترک'],'#214a35','#fff4cd',40).map,transparent:true,depthTest:false}));
+ player.nameTag.scale.set(3.8,.95,1);player.nameTag.position.set(0,2.5,0);player.avatar.add(player.nameTag);player.tagText=player.state?.name||'بازیکن آنلاین';player.color=color;
+ if(oldParent===player.vehicleRoot&&player.vehicleRoot)player.vehicleRoot.add(player.avatar);else scene.add(player.avatar);if(oldPos)player.avatar.position.copy(oldPos);player.avatar.rotation.y=oldRot;
+}
+function ensureRemotePlayerVehicle(player){
+ if(!player.avatar||!player.state)return;
+ const s=player.state,type=s.vehicleType,key=type==='car'?`car:${s.vehicleId}`:type;
+ if(type==='foot'){
+  if(player.vehicleRoot){if(player.avatar.parent===player.vehicleRoot){player.vehicleRoot.remove(player.avatar);scene.add(player.avatar);}scene.remove(player.vehicleRoot);player.vehicleRoot=null;player.vehicleKey='';}
+  if(player.avatar.parent!==scene){player.avatar.parent?.remove(player.avatar);scene.add(player.avatar);}
+  return;
+ }
+ if(player.vehicleRoot&&player.vehicleKey===key)return;
+ if(player.avatar.parent)player.avatar.parent.remove(player.avatar);
+ if(player.vehicleRoot)scene.remove(player.vehicleRoot);
+ let template=type==='tractor'?remoteVehicleTemplates.tractor:type==='bike'?remoteVehicleTemplates.bike:type==='car'?remoteVehicleTemplates.cars[s.vehicleId]:null;
+ if(!template)template=remoteVehicleTemplates.tractor;
+ if(!template){scene.add(player.avatar);player.vehicleRoot=null;player.vehicleKey='';return;}
+ player.vehicleRoot=template.clone(true);player.vehicleKey=key;scene.add(player.vehicleRoot);player.vehicleRoot.visible=true;player.vehicleRoot.add(player.avatar);
+ if(type==='car')player.vehicleRoot.traverse(o=>{if(o.isMesh)o.castShadow=false;});
+}
+function removeRemotePlayer(id){
+ const p=remotePlayers.get(id);if(!p)return;
+ if(p.avatar?.parent)p.avatar.parent.remove(p.avatar);if(p.avatar&&scene)scene.remove(p.avatar);if(p.vehicleRoot&&scene)scene.remove(p.vehicleRoot);
+ p.nameTag=null;p.avatar=null;p.vehicleRoot=null;remotePlayers.delete(id);
+}
+function createRemoteVisuals(){for(const p of remotePlayers.values()){createRemotePlayerVisual(p);ensureRemotePlayerVehicle(p);}}
+function removeRemoteVisuals(){for(const id of [...remotePlayers.keys()])removeRemotePlayer(id);}
+function updateRemoteVisuals(dt){
+ if(!started||multiplayerRole==='offline')return;
+ for(const p of remotePlayers.values()){
+  if(!p.state)continue;if(!p.avatar)createRemotePlayerVisual(p);if(!p.avatar)continue;
+  const s=p.state,modeKey=s.mode+'/'+s.vehicleType+'/'+s.vehicleId;ensureRemotePlayerVehicle(p);
+  if(s.vehicleType==='foot'){
+   if(p.vehicleRoot){if(p.avatar.parent===p.vehicleRoot){p.vehicleRoot.remove(p.avatar);scene.add(p.avatar);}scene.remove(p.vehicleRoot);p.vehicleRoot=null;p.vehicleKey='';}
+   if(p.avatar.parent!==scene){p.avatar.parent?.remove(p.avatar);scene.add(p.avatar);}p.avatar.scale.setScalar(1);
+   if(p.visualMode!==modeKey||Math.hypot(p.avatar.position.x-s.x,p.avatar.position.z-s.z)>30)p.avatar.position.set(s.x,0,s.z);
+   else{p.avatar.position.x=THREE.MathUtils.damp(p.avatar.position.x,s.x,12,dt);p.avatar.position.z=THREE.MathUtils.damp(p.avatar.position.z,s.z,12,dt);}
+   p.avatar.rotation.y=angleLerp(p.avatar.rotation.y,s.yaw,Math.min(1,dt*12));animateHuman(p.avatar,dt,s.moving);
+  }else if(p.vehicleRoot){
+   if(p.avatar.parent!==p.vehicleRoot){p.avatar.parent?.remove(p.avatar);p.vehicleRoot.add(p.avatar);}
+   const tx=s.x,tz=s.z;if(p.visualMode!==modeKey||Math.hypot(p.vehicleRoot.position.x-tx,p.vehicleRoot.position.z-tz)>30)p.vehicleRoot.position.set(tx,0,tz);
+   else{p.vehicleRoot.position.x=THREE.MathUtils.damp(p.vehicleRoot.position.x,tx,10,dt);p.vehicleRoot.position.z=THREE.MathUtils.damp(p.vehicleRoot.position.z,tz,10,dt);}
+   p.vehicleRoot.rotation.y=angleLerp(p.vehicleRoot.rotation.y,s.yaw,Math.min(1,dt*10));p.vehicleRoot.visible=true;
+   p.avatar.scale.setScalar(s.vehicleType==='car'?.53:s.vehicleType==='bike'?.48:.72);p.avatar.position.set(s.vehicleType==='car'?-.39:s.vehicleType==='bike'?0:(s.mode==='passenger'?.38:-.38),s.vehicleType==='car'?.61:s.vehicleType==='bike'?.48:1.31,s.vehicleType==='car'?.16:s.vehicleType==='bike'?.04:.48);p.avatar.rotation.set(0,0,0);
+  }
+  p.visualMode=modeKey;
+ }
+}
+function angleLerp(a,b,t){let d=(b-a+Math.PI)%(Math.PI*2);if(d<0)d+=Math.PI*2;d-=Math.PI;return a+d*t;}
+function localNetworkState(){
+ let vehicleType='foot',vehicleId='',v=null,x=person?.position.x??0,z=person?.position.z??0,heading=yaw;
+ if(mode==='driver'||mode==='passenger'){vehicleType='tractor';v=tractor;}
+ else if(mode==='carDriver'&&activeCar){vehicleType='car';v=activeCar;vehicleId=activeCar.userData.carId;}
+ else if(mode==='bikeDriver'&&activeBike){vehicleType='bike';v=activeBike;}
+ if(v){x=v.position.x;z=v.position.z;heading=v.rotation.y;}
+ return {type:'state',payload:{name:localPlayerName,shirtColor,mode,vehicleType,vehicleId,x,z,yaw:heading,moving:mode==='foot'&&!!(keys.w||keys.s)}};
+}
+function sendNetworkState(dt){
+ if(!started||multiplayerRole!=='mesh'||!trysteroTransports.length)return;
+ networkSendTimer+=dt;if(networkSendTimer<.09)return;networkSendTimer=0;
+ sendOwnWorldState();
+}
+function upsertRemoteStateNoSelf(){/* host's state is sent to guests; it is not drawn as a second local avatar */}
+function disconnectOnline(){
+ manualDisconnect=true;clearTimeout(reconnectTimer);globalJoinInProgress=false;multiplayerRole='offline';joinedSharedWorld=false;
+ cleanupNetworkObjects();myPeerId='';$('onlineHud').style.display='none';setNetworkStartStatus('از دنیای مشترک خارج شدی. با تازه‌کردن صفحه می‌توانی دوباره وارد شوی.');
+}
+$('play').addEventListener('click',()=>{localPlayerName=cleanNickname($('playerNameInput').value);void startGame();void joinGlobalWorld();});
+$('quickOnlineBtn').addEventListener('click',()=>{if(multiplayerRole!=='offline'){tell('در حال تلاش برای حضور در دنیای مشترک هستی.');return;}if(!started)void startGame();void joinGlobalWorld();});
+$('disconnectOnline').addEventListener('click',disconnectOnline);
+addEventListener('beforeunload',()=>{saveGame();manualDisconnect=true;for(const transport of trysteroTransports){try{const left=transport.room?.leave?.();if(left&&typeof left.catch==='function')left.catch(()=>{});}catch(e){}}});
+</script>
+</body>
+</html>
